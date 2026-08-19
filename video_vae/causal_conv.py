@@ -4,6 +4,10 @@ from typing import Union, Tuple
 from timm.layers import trunc_normal_
 from collections import deque
 
+from context_parallel import (
+    get_context_parallel_rank
+)
+
 def is_odd(num):
     return num % 2 != 0 
  
@@ -66,6 +70,16 @@ class CausalConv3d(nn.Module):
             nn.init.constant_(m.weight, 1.0)
 
 
+    def context_parallel_forward(self, x):
+
+        cp_rank = get_context_parallel_rank()
+        if self.time_kernel_size == 3 and ((cp_rank == 0 and x.shape[2] <= 2) or (cp_rank != 0 and x.shape[2] <= 1)):
+
+            # This code is only for training 8frames per gpu (except for cp_rank=0)
+            pass 
+            
+
+
     
 
 
@@ -111,6 +125,7 @@ class CausalConv3d(nn.Module):
                 video_front_context = self.cache_front_feat.pop()
                 ## <-- context_parallel --> ##
 
+                # connect the next frame with padding.
                 if self.temporal_stride == 1 and self.time_kernel_size == 3:
                     x = torch.cat([video_front_context, x], dim=2)
                 elif self.temporal_stride == 2 and self.time_kernel_size == 3:
