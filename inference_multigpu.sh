@@ -4,5 +4,5 @@
 
 GPUS=2
 
-torchrun --nproc_per_node $GPUS \
+torchrun --nproc-per-node=$GPUS \
     inference_multigpu.py

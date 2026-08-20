@@ -5,7 +5,9 @@ from timm.layers import trunc_normal_
 from collections import deque
 
 from context_parallel import (
-    get_context_parallel_rank
+    get_context_parallel_rank,
+    cp_pass_from_previous_rank,
+    is_context_parallel_initialized
 )
 
 def is_odd(num):
@@ -76,7 +78,31 @@ class CausalConv3d(nn.Module):
         if self.time_kernel_size == 3 and ((cp_rank == 0 and x.shape[2] <= 2) or (cp_rank != 0 and x.shape[2] <= 1)):
 
             # This code is only for training 8frames per gpu (except for cp_rank=0)
-            pass 
+            x = cp_pass_from_previous_rank(x, dim=2, kernel_size=2) # pass one latent 
+            trans_x = cp_pass_from_previous_rank(input_=x[:, :, :-1],
+                                                 dim=2,
+                                                 kernel_size=2) # pass one latent 
+            x = torch.cat([trans_x, x[:, :, -1:]],
+                          dim=2)
+
+        else:
+            x = cp_pass_from_previous_rank(input_=x,
+                                           dim=2,
+                                           kernel_size=self.time_kernel_size)
+
+        x = torch.nn.functional.pad(x, self.time_uncausal_padding, mode='constant')
+
+        if cp_rank != 0:
+            if self.temporal_stride == 2 and self.time_kernel_size == 3:
+                x = x[:, :, 1:]
+
+        x = self.conv(x)
+        return x 
+    
+
+    def _clear_context_parallel_cache(self):
+        del self.cache_front_feat
+        self.cache_front_feat = deque()
             
 
 
@@ -88,6 +114,9 @@ class CausalConv3d(nn.Module):
                 x, 
                 is_init_image=True,
                 temporal_chunk=False):
+
+        if is_context_parallel_initialized():
+            return self.context_parallel_forward(x)
 
 
         if self.time_pad < x.shape[2]:
@@ -111,6 +140,7 @@ class CausalConv3d(nn.Module):
                 # Encode the first chunk.
                 x = torch.nn.functional.pad(x, self.time_causal_padding, mode=pad_mode)
                 ## <-- context_parallel --> ##
+                self._clear_context_parallel_cache()
                 
 
                 # take the very last 2 frames of the chunk, detach them from the computation graph and store them in the cache.
@@ -124,6 +154,7 @@ class CausalConv3d(nn.Module):
                                             mode=pad_mode)
                 video_front_context = self.cache_front_feat.pop()
                 ## <-- context_parallel --> ##
+                self._clear_context_parallel_cache()
 
                 # connect the next frame with padding.
                 if self.temporal_stride == 1 and self.time_kernel_size == 3:
