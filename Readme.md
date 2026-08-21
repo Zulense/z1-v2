@@ -1,14 +1,15 @@
-![alt text](<assets/Screenshot from 2026-08-21 12-04-45.png>)
+![alt text](assets/heading_photo.png)
 ---
+
 <div align="center">
-  <video autoplay loop muted playsinline width="32%" src="assets/Electrochemistry question in JEE ADVANCE. - manish kumar (360p, h264).gif" title="Electrochemistry"></video>
-  <video autoplay loop muted playsinline width="32%" src="assets/Evaluate the definite integral I ∫₀(π_2) [sin x _ (sin x + cos x)] dx - manish kumar (360p, h264).gif" title="Math Integration"></video>
-  <video autoplay loop muted playsinline width="32%" src="assets/jee advance question in Thermodynamics - manish kumar (360p, h264).gif" title="Thermodynamics"></video>
+  <video src="assets/A_constant_force.mp4" autoplay loop muted playsinline width="32%"></video>
+  <video src="assets/Electrochemistry.mp4" autoplay loop muted playsinline width="32%"></video>
+  <video src="assets/Evaluate_the_definite_integral.mp4" autoplay loop muted playsinline width="32%"></video>
 </div>
 <div align="center">
-  <video autoplay loop muted playsinline width="32%" src="assets/A constant force F 3î + 4ĵ - manish kumar (360p, h264).gif" title="Electrochemistry"></video>
-  <video autoplay loop muted playsinline width="32%" src="assets/Professor Proved W ½mvf² − ½mvi² ΔK - manish kumar (360p, h264).gif" title="Math Integration"></video>
-  <video autoplay loop muted playsinline width="32%" src="assets/teacher at Blackboard to teach vf vi + at. - manish kumar (360p, h264).gif" title="Thermodynamics"></video>
+  <video src="assets/jee_advance_question_in_Thermodynamics.mp4" autoplay loop muted playsinline width="32%"></video>
+  <video src="assets/Professor_Proved.mp4" autoplay loop muted playsinline width="32%"></video>
+  <video src="assets/teacher_at_Blackboard_to_teach.mp4" autoplay loop muted playsinline width="32%"></video>
 </div>
 
 ---
