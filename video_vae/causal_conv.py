@@ -170,28 +170,16 @@ class CausalConv3d(nn.Module):
 
 
 
-
-
-
-
-
-        
-
-
-    
-
-
-
-
-        
-
-
-
 if __name__ == "__main__":
 
     object = CausalConv3d(input_channels=3,
                           output_chaannels=128,
                           kernel_size=3,
                           stride=1)
+
+
+    x = torch.randn(12, 3, 8, 128, 128)
+
+    out = object(x)
 
     

@@ -124,6 +124,8 @@ def _cp_pass_from_previous_rank(input_, dim, kernel_size):
     cp_group_rank = get_context_parallel_group_rank()
     cp_world_size = get_context_parallel_world_size()
 
+    print('in _pass_from_previous_rank, cp_rank:', cp_rank, 'input_size:', input_.shape)
+
     global_rank = torch.distributed.get_rank()
     global_world_size = torch.distributed.get_world_size()
 
@@ -140,7 +142,7 @@ def _cp_pass_from_previous_rank(input_, dim, kernel_size):
     recv_buffer = torch.empty_like(input=input_[-kernel_size + 1:]).contiguous()
     if cp_rank < cp_world_size - 1:
         req_send = torch.distributed.isend(tensor=input_[-kernel_size + 1:].contiguous(),
-                                           dist=send_rank,
+                                           dst=send_rank,
                                            group=group)
 
     if cp_rank > 0:
@@ -174,8 +176,8 @@ class _CPConvPassFromPrevRank(torch.autograd.Function):
         return _cp_pass_from_previous_rank(input_, dim, kernel_size)
 
     @staticmethod
-    def backward(ctx, *grad_outputs):
-        return _drop_from_prev_rank(grad_outputs, ctx.dim, ctx.kernel_size), None, None
+    def backward(ctx, grad_output):
+        return _drop_from_prev_rank(grad_output, ctx.dim, ctx.kernel_size), None, None
 
     
 
