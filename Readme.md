@@ -21,3 +21,4 @@ as testing inference.
 ```
 sh inference_multigpu.sh
 ```
+
