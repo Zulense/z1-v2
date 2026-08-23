@@ -9,6 +9,7 @@ def get_args():
     parser = argparse.ArgumentParser('Pytorch Multi-process Script', add_help=False)
     parser.add_argument('--sp_group_size', default=2, type=int, help='The number of GPUS used for inference, should 2 or 4')
     parser.add_argument('--model_dtype', default='bf16', type=str, help='The Model Dtype: bf16')
+    parser.add_argument('--sp_proc_num', default=-1, type=int, help="The number of process used for video training default=-1 means using all process.")
 
     return parser.parse_args()
 
@@ -34,9 +35,13 @@ def main():
                          kernel_size=3,
                          stride=1).to(device)
 
-    x = torch.randn(32, 3, 8, 128, 128)
+    x = torch.randn(32, 3, 8, 128, 128).to(device)
     out = model(x).to(device)
-    print(out)
+    print(out.shape)
+
+
+if __name__ == "__main__":
+    main()
     
 
     

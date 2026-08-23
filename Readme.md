@@ -19,6 +19,6 @@ we have 8 A100 40 GPU to test conv layer.
 
 as testing inference.
 ```
-sh inference_multigpu.sh
+sbatch inference_multigpu.slurm
 ```
 

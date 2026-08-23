@@ -51,3 +51,21 @@ scancel 12345
 ```
 scancel -u $USER
 ```
+
+## 4. Check When It Will Start
+```
+squeue --start -j <Job Id>
+```
+output: 
+```
+JOBID PARTITION     NAME     USER ST          START_TIME  NODES SCHEDNODES           NODELIST(REASON)
+            516325     dgxnp multi_gp   mansav PD 2026-08-24T23:12:47      1 (null)               (Priority)
+
+```
+
+## 5. see the output log.
+```
+cat <filename_with_JOB-ID>.log
+```
+like this `inference_516348`
+
