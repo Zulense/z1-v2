@@ -1,7 +1,7 @@
 import torch 
 from torch import nn 
-
 from vae import CausalVideoVae
+
 
 
 
@@ -40,9 +40,11 @@ class VAELossWrapper(nn.Module):
 
     def forward(self, x):
 
-        xdim = x.ndim 
+        xdim = x.ndim
+        
 
-        if 'video' in identifier:
+
+        
             
 
 

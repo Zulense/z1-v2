@@ -3,6 +3,8 @@ from torch import nn
 from typing import Union, Tuple
 from timm.layers import trunc_normal_
 from collections import deque
+from torch import Tensor
+from einops import rearrange
 
 from context_parallel import (
     get_context_parallel_rank,
@@ -170,16 +172,12 @@ class CausalConv3d(nn.Module):
 
 
 
-if __name__ == "__main__":
+class CausalGroupNorm(nn.GroupNorm):
 
-    object = CausalConv3d(input_channels=3,
-                          output_chaannels=128,
-                          kernel_size=3,
-                          stride=1)
+    def forward(self, x: Tensor) -> Tensor:
+        t = x.shape[2]
+        x = rearrange(x, 'b c t h w -> (b t) c h w')
+        x = super().forward(x)
+        x = rearrange(x, '(b t) c h w -> b c t h w', t=t)
+        return x 
 
-
-    x = torch.randn(12, 3, 8, 128, 128)
-
-    out = object(x)
-
-    

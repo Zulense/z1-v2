@@ -1,11 +1,11 @@
 import torch 
 from torch import nn 
 from typing import Tuple, Optional
-from diffusers.utils import is_torch_version
+from diffusers.utils import is_torch_version, BaseOutput
 from torch.utils.checkpoint import checkpoint
 from diffusers.utils.torch_utils import randn_tensor
 import numpy as np 
-
+from dataclasses import dataclass
 
 
 from causal_conv import CausalConv3d, CausalGroupNorm
@@ -355,4 +355,17 @@ class DiagonalGaussianDistribution(object):
         return self.mean 
 
     
- 
+
+@dataclass
+class DecoderOutput(BaseOutput):
+
+    """
+    Output of decoding method.
+
+    Args:
+        sample (`torch.FloatTensor` or shape `(batch_size, num_channels, height, width)`):
+            The decoded output sample from the last layer of the model.
+    """
+
+
+    sample: torch.FloatTensor

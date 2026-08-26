@@ -4,8 +4,10 @@ from pathlib import Path
 import numpy as np
 import torch.backends.cudnn as cudnn
 
-from context_parallel import init_distributed_mode, initialize_context_parallel, get_rank
+from context_parallel import init_distributed_mode, initialize_context_parallel, get_rank, get_world_size
 from video_vae.vae import CausalVideoVae
+from dataset.dataset_cls import VideoDataset
+from dataset.dataloaders import video_dataloaders
 
 def get_args():
     parser = argparse.ArgumentParser('Pytorch Multi-process Training script for Video VAE', add_help=False)
@@ -111,7 +113,7 @@ def get_args():
     return parser.parse_args()
 
 
-def build_model(args):
+# def build_model(args):
 
     
 
@@ -132,7 +134,25 @@ def main(args):
     random.seed(seed)
 
     cudnn.benchmark = True
-    model = 
+    # model = 
+
+    world_size = get_world_size()
+    global_rank = get_rank()
+
+    # build dataset and dataloaders 
+    # only video 
+    training_dataset = VideoDataset(anno_file=args.video_anno,
+                                    resolution=args.resolution,
+                                    max_frames=args.max_frames,
+                                    add_normalize=not args.not_add_normalize)
+
+    data_loader_train = video_dataloaders(dataset=training_dataset,
+                                          batch_size=args.batch_size,
+                                          num_workers=args.num_workers,
+                                          world_size=world_size,
+                                          rank=global_rank,
+                                          epoch=args.seed)
+    print(f"<-------------------[Dataloader] video: {data_loader_train}----------------->")
 
 
         

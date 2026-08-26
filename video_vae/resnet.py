@@ -262,7 +262,7 @@ class CausalTemporalUpsample2x(nn.Module):
                  use_conv: bool = True,
                  kernel_size: Optional[int] = 3,
                  bias = True,
-                 interpolate=False):
+                 ):
 
         super().__init__()
         self.channels = channels
