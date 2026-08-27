@@ -154,7 +154,7 @@ def main(args):
                                           epoch=args.seed)
     print(f"<-------------------[Dataloader] video: {data_loader_train}----------------->")
 
-
+    
         
 
 

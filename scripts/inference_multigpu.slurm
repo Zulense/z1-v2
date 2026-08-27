@@ -16,7 +16,7 @@ GPUS=2
 
 # Run the inference script, making sure sp_group_size matches world_size
 torchrun --nproc-per-node=$GPUS \
-    inference_multigpu.py \
+    train/inference_multigpu.py \
     --sp_group_size=$GPUS
 
 EOF

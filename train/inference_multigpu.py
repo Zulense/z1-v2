@@ -1,3 +1,5 @@
+## <---- This is testing [inference] file. -----------------> ##
+
 import torch, argparse
 from context_parallel import init_distributed_mode
 from sequence_parallel import init_sequence_parallel_group
