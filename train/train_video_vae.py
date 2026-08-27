@@ -3,6 +3,10 @@ import argparse
 from pathlib import Path
 import numpy as np
 import torch.backends.cudnn as cudnn
+import sys 
+
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from context_parallel import init_distributed_mode, initialize_context_parallel, get_rank, get_world_size
 from video_vae.vae import CausalVideoVae

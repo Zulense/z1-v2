@@ -41,13 +41,7 @@ squeue -u $USER
 ```
 
 ## 3. Look under the `JOBID` column for the number assigned to your job.
-```
-scancel 12345
-```
 
-- Cancel it by typing `scancel` followed by that number. For example, if your Job ID is `12345`:
-
-### or 
 ```
 scancel -u $USER
 ```
@@ -69,3 +63,7 @@ cat <filename_with_JOB-ID>.log
 ```
 like this `inference_516348`
 
+## Run the python file.
+```
+sbatch inference_multigpu.slurm
+```

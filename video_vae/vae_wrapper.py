@@ -1,6 +1,6 @@
 import torch 
 from torch import nn 
-from vae import CausalVideoVae
+from .vae import CausalVideoVae
 
 
 

@@ -6,7 +6,7 @@ from diffusers.models.attention_processor import SpatialNorm
 from diffusers.models.activations import get_activation
 from einops import rearrange
 
-from causal_conv import CausalGroupNorm, CausalConv3d
+from .causal_conv import CausalGroupNorm, CausalConv3d
 
 
 class CausalResnetBlock3D(nn.Module):

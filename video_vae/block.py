@@ -4,7 +4,8 @@ from torch import nn
 from diffusers.utils import logging
 from diffusers.models.attention_processor import Attention
 from einops import rearrange
-from resnet import CausalResnetBlock3D, CausalDownsample2x, CausalTemporalDownSample2x, CausalTemporalUpsample2x, CausalUpsample2x
+
+from .resnet import CausalResnetBlock3D, CausalDownsample2x, CausalTemporalDownSample2x, CausalTemporalUpsample2x, CausalUpsample2x
 logger = logging.get_logger(__name__)
 
 

@@ -8,8 +8,8 @@ import numpy as np
 from dataclasses import dataclass
 
 
-from causal_conv import CausalConv3d, CausalGroupNorm
-from block import DownEncoderBlockCausal3D, MidBlockCausal3D, UpDecoderBlockCausal3D
+from .causal_conv import CausalConv3d, CausalGroupNorm
+from .block import DownEncoderBlockCausal3D, MidBlockCausal3D, UpDecoderBlockCausal3D
 
 
 class CausalVaeEncoder(nn.Module):

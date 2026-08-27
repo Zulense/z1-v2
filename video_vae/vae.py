@@ -8,9 +8,14 @@ from torch.utils.checkpoint import checkpoint
 from diffusers.utils import logging
 logger = logging.get_logger()
 
-from enc_dec import CausalVaeEncoder, CausalVaeDecoder, DecoderOutput, DiagonalGaussianDistribution
-from causal_conv import CausalConv3d
 
+from .enc_dec import CausalVaeEncoder, CausalVaeDecoder, DecoderOutput, DiagonalGaussianDistribution
+from .causal_conv import CausalConv3d
+
+import sys 
+from pathlib import Path
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from context_parallel import is_context_parallel_initialized, conv_gather_from_context_parallel_region, get_context_parallel_rank
 
 
