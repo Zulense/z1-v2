@@ -164,6 +164,4 @@ def main(args):
 
 if __name__ == '__main__':
     opts = get_args()
-    if opts.output_dir:
-        Path(opts.output_dir).mkdir(parents=True, exist_ok=True)
     main(opts)

@@ -11,11 +11,24 @@
 
 # Define the number of GPUs
 GPUS=2
+VIDEO_ANNO=annotation/class_5_math_white_board.jsonl
+RESOLUTION=256
+NUM_FRAMES=33 # 17 * context_size + 1 
+BATCH_SIZE=2
+CONTEXT_SIZE=2   # context parallel size, GPUS % CONTEXT_SIZE=0
+
+
 
 # Run the inference script, making sure sp_group_size matches world_size
 torchrun --nproc-per-node=$GPUS \
     train/train_video_vae.py \
     --sp_group_size=$GPUS \
-    --output_dir $OUTPUT_DIR \
+    --max_frames=$NUM_FRAMES \
+    --batch_size=$BATCH_SIZE \
+    --num_workers 6 \
+    --seed 42 \
+    --context_size $CONTEXT_SIZE \
+
+    
 
 EOF
