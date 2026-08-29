@@ -1,12 +1,12 @@
 import torch 
 from torch.utils.data import Dataset, DataLoader
 import jsonlines
-import tqdm
+from tqdm import tqdm
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 import cv2
 import random
-
+from pathlib import Path
 
 
 class VideoDataset(Dataset):
@@ -25,6 +25,8 @@ class VideoDataset(Dataset):
             anno_file = [anno_file]
 
         print(f"The training video clip frame number is {max_frames}")
+
+        
 
         for anno_file_ in anno_file:
             print(f"Load annotation file from {anno_file_}")
@@ -46,7 +48,8 @@ class VideoDataset(Dataset):
 
     def __getitem__(self, index):
         video_anno = self.video_annos[index]
-        video_path = video_path['video']
+        video_path = video_anno['video']
+        
 
         try:
             video_tensors, video_frames = self.video_processor(video_path)

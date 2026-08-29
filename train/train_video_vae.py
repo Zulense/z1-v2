@@ -158,6 +158,9 @@ def main(args):
                                           epoch=args.seed)
     print(f"<-------------------[Dataloader] video: {data_loader_train}----------------->")
 
+    for batch_size in data_loader_train:
+        print(batch_size)
+
     
         
 
