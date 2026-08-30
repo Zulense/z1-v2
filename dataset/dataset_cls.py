@@ -49,6 +49,12 @@ class VideoDataset(Dataset):
     def __getitem__(self, index):
         video_anno = self.video_annos[index]
         video_path = video_anno['video']
+
+        # --- NEW CODE START ---
+        # Correct the root path from the JSON to match your actual Linux file system
+        if video_path.startswith("/Data/"):
+            video_path = f"/nlsasfs/home/hfgenai/mansav{video_path}"
+        # --- NEW CODE END ---
         
 
         try:

@@ -150,6 +150,13 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                 global_moments = conv_gather_from_context_parallel_region(moments, dim=2, kernel_size=1)
                 global_posterior = DiagonalGaussianDistribution(global_moments)
 
+            if sample_posterior:
+                z = posterior.sample(generator=generator)
+            else:
+                z = posterior.mode()
+
+                print(z)
+
 
             
 

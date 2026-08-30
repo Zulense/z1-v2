@@ -308,3 +308,25 @@ def initialize_context_parallel(context_parallel_size):
             _CONTEXT_PARALLEL_GROUP = group
             break
 
+
+
+
+class _ConvScatterToContextParallelRegion(torch.autograd.Function):
+
+    @staticmethod
+    def forward(ctx, input_, dim, kernel_size):
+        ctx.dim = dim 
+        ctx.kernel_size = kernel_size
+        return _conv_split(input_, dim, kernel_size)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return _conv_gather(grad_output, ctx.dim, ctx.kernel_size), None, None 
+    
+
+
+
+def conv_scatter_to_context_parallel_region(input_, 
+                                            dim,
+                                            kernel_size):
+    return _ConvScatterToContextParallelRegion.apply(input_, dim, kernel_size)

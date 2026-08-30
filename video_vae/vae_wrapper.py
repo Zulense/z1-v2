@@ -2,6 +2,18 @@ import torch
 from torch import nn 
 from .vae import CausalVideoVae
 
+import sys 
+from pathlib import Path
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from context_parallel import (
+        is_context_parallel_initialized, 
+        get_context_parallel_world_size, 
+        get_context_parallel_group_rank, 
+        get_context_parallel_group,
+        conv_scatter_to_context_parallel_region
+        )
+
 
 
 
@@ -38,10 +50,31 @@ class VAELossWrapper(nn.Module):
         self.vae_scale_factor = self.vae.config.scaling_factor
 
 
-    def forward(self, x):
+    def forward(self, x, step, identifier=['video']):
+
 
         xdim = x.ndim
-        
+        if 'video' in identifier:
+            print("video are found.")
+
+        if is_context_parallel_initialized():
+
+            assert self.training, "Only supports during training now."
+            cp_world_size = get_context_parallel_world_size()
+            global_src_rank = get_context_parallel_group_rank() * cp_world_size
+
+            # sync the input and split 
+            torch.distributed.broadcast(x, 
+                                        src=global_src_rank,
+                                         group=get_context_parallel_group())
+            batch_x = conv_scatter_to_context_parallel_region(x, dim=2, kernel_size=1)
+
+
+        posterior, reconstruct = self.vae(batch_x,
+                                          is_init_image=True,
+                                          temporal_chunk=False)
+
+        print(posterior, reconstruct)
 
 
         

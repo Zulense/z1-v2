@@ -117,7 +117,9 @@ def get_args():
     return parser.parse_args()
 
 
-# def build_model(args):
+def build_model(args):
+
+    pass 
 
     
 
