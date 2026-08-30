@@ -20,7 +20,6 @@ from context_parallel import (
 class VAELossWrapper(nn.Module):
 
     def __init__(self,
-                 model_path,
                  model_dtype='fp32',
                  disc_start=0,
                  logvar_init=0.0,

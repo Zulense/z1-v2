@@ -9,7 +9,7 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from context_parallel import init_distributed_mode, initialize_context_parallel, get_rank, get_world_size
-from video_vae.vae import CausalVideoVae
+from video_vae.vae_wrapper import VAELossWrapper
 from dataset.dataset_cls import VideoDataset
 from dataset.dataloaders import video_dataloaders
 
@@ -119,7 +119,10 @@ def get_args():
 
 def build_model(args):
 
-    pass 
+    model = VAELossWrapper(model_dtype='fp32'
+                           )
+
+    return model 
 
     
 
@@ -140,10 +143,12 @@ def main(args):
     random.seed(seed)
 
     cudnn.benchmark = True
-    # model = 
+    model = build_model(args=args)
 
     world_size = get_world_size()
     global_rank = get_rank()
+
+    num_training_steps_per_epoch = args.iters_per_epoch
 
     # build dataset and dataloaders 
     # only video 
@@ -160,8 +165,29 @@ def main(args):
                                           epoch=args.seed)
     print(f"<-------------------[Dataloader] video: {data_loader_train}----------------->")
 
-    for batch_size in data_loader_train:
-        print(batch_size)
+    torch.distributed.barrier()
+
+    model.to(device)
+    model_without_ddp = model 
+
+    n_learnable_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    n_fix_parameters = sum(p.numel() for p in model.parameters() if not p.requires_grad)
+    for name, p in model.named_parameters():
+        if not p.requires_grad:
+            print(name)
+
+    print(f"total number of learnable params: {n_learnable_parameters / 1e6} M")
+    print(f"total number of fixed params in : {n_fix_parameters / 1e6} M")
+
+    total_batch_size = args.batch_size * get_world_size()
+    print(f"LR = {args.lr:.8f}")
+    print(f"Min LR = {args.min_lr:.8f}")
+    print(f"Weight Decay = {args.weight_decay:.8f}")
+    print(f"Batch size = {args.total_batch_size}")
+    print(f"Number of training steps = {num_training_steps_per_epoch * args.epochs}")
+    print(f"Number of training examples per epoch = {total_batch_size * num_training_steps_per_epoch}")
+
+    
 
     
         
