@@ -28,6 +28,8 @@ torchrun --nproc-per-node=$GPUS \
     --seed 42 \
     --context_size $CONTEXT_SIZE \
     --video_anno=$VIDEO_ANNO \
+    --batch_size=$BATCH_SIZE \ 
+    
 
 
 

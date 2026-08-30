@@ -68,6 +68,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                  ):
 
         super().__init__()
+        
         print(f"The latent dim channels is: {encoder_out_channels}")
 
         self.encoder = CausalVaeEncoder(in_channels=encoder_in_channels,
@@ -106,8 +107,23 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                                             kernel_size=1,
                                             stride=1)
 
+        self.downsample_scale = downsample_scale
+        self.use_tiling = False 
 
-    def __init__weight(self, m):
+        # only relevent if vae tiling is enabled 
+        self.tile_sample_min_size = self.config.sample_size
+
+        sample_size = (
+            self.config.sample_size[0] if isinstance(self.config.sample_size, (list, tuple)) else self.config.sample_size
+        )
+        self.tile_latent_min_size = int(sample_size / downsample_scale)
+        self.decode_tile_overlap_factor = 1 / 4 
+        self.downsample_scale = downsample_scale
+
+        self.apply(self._init_weight)
+
+
+    def _init_weight(self, m):
         if isinstance(m, (nn.Linear, nn.Conv2d, nn.Conv3d)):
             trunc_normal_(m.weight, std=.02)
             if m.bias is not None:
@@ -155,7 +171,58 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             else:
                 z = posterior.mode()
 
-                print(z)
+            if get_context_parallel_rank() == 0:
+                dec = self.decode(z, is_init_image=True).sample
+
+            return global_posterior, dec 
+        
+
+
+    def decode(self, 
+               z: torch.FloatTensor,
+               is_init_image=True,
+               temporal_chunk=False,
+               return_dict: bool = True,
+               window_size: int = 2,
+               tile_sample_min_size: int = 256) -> Union[DecoderOutput, torch.FloatTensor]:
+
+        self.tile_sample_min_size = tile_sample_min_size
+        self.tile_latent_min_size = int(tile_sample_min_size / self.downsample_scale)
+
+        # checks if spatial tiling is enabled AND if the width ([-1]) or height ([-2]) of the latent exceeds the safe limit.
+        # if it is too big, it rotues to `tiled_decode` to prevent GPU memory crashed.
+        if self.use_tiling and (z.shape[-1] > self.tile_latent_min_size or z.shape[-2] > self.tile_latent_min_size):
+            logger.warning("latent shape are more than: [:, :, :, 32, 32], But `tile_decode` Function does not Execute...")
+            return self.tiled_decode()
+
+        if temporal_chunk:
+            # dec = self.chunk_decode(z, window_size=window_size)
+            logger.warning("Temporal Chunk is Enable But Funcation does not Execute...")
+        else:
+            z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
+            dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
+
+
+        if not return_dict:
+            return (dec,)
+
+        return DecoderOutput(sample=dec)
+    
+
+
+    def tiled_decode(self):
+
+        r"""
+        Decode High resolution videos.
+        """
+
+        pass 
+
+        
+
+
+    
+
 
 
             

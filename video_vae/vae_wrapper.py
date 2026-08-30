@@ -14,6 +14,8 @@ from context_parallel import (
         conv_scatter_to_context_parallel_region
         )
 
+from .loss import LPIPSWithDiscriminator
+
 
 
 
@@ -48,11 +50,28 @@ class VAELossWrapper(nn.Module):
         self.vae = CausalVideoVae()
         self.vae_scale_factor = self.vae.config.scaling_factor
 
+        self.add_discriminator = add_discriminator
+
+        # Used for training.
+        if load_loss_module:
+            self.loss = LPIPSWithDiscriminator(disc_start=disc_start,
+                                               logvar_init=logvar_init,
+                                               kl_weight=kl_weight,
+                                               pixelloss_weight=pixelloss_weight,
+                                               perceptual_weight=perceptual_weight,
+                                               disc_weight=disc_weight,
+                                               add_discriminator=add_discriminator,
+                                               using_3d_discriminator=False,
+                                               disc_num_layers=4,
+                                               lpips_ckpt=lpips_ckpt)
+
+        self.disc_start = disc_start
+
 
     def forward(self, x, step, identifier=['video']):
 
 
-        xdim = x.ndim
+        
         if 'video' in identifier:
             print("video are found.")
 
@@ -73,7 +92,35 @@ class VAELossWrapper(nn.Module):
                                           is_init_image=True,
                                           temporal_chunk=False)
 
-        print(posterior, reconstruct)
+        # The reconstruct loss 
+        reconstruct_loss, rec_log = self.loss(
+            batch_x,
+            reconstruct,
+            posterior,
+            optimizer_idx=0,
+            global_step=step,
+            last_layer=self.vae.get_last_layer()
+        )
+
+        if step < self.disc_start:
+            return reconstruct_loss, None, rec_log
+
+
+        # The loss to train the discrimiator 
+        gan_loss, gan_log = self.loss(batch_x, 
+                                      reconstruct, 
+                                      posterior, 
+                                      optimizer_idx=1,
+                                      global_step=step,
+                                      last_layer=self.vae.get_last_layer())
+
+        loss_log = {**rec_log, **gan_log}
+
+        return reconstruct_loss, gan_loss, loss_log 
+
+    
+
+        
 
 
         

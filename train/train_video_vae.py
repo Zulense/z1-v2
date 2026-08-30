@@ -13,6 +13,9 @@ from video_vae.vae_wrapper import VAELossWrapper
 from dataset.dataset_cls import VideoDataset
 from dataset.dataloaders import video_dataloaders
 
+from trainer_middleware.utils import create_optimizer, NativeScalerWithGradNormCount
+
+
 def get_args():
     parser = argparse.ArgumentParser('Pytorch Multi-process Training script for Video VAE', add_help=False)
     parser.add_argument('--batch_size', default=64, type=int)
@@ -187,7 +190,24 @@ def main(args):
     print(f"Number of training steps = {num_training_steps_per_epoch * args.epochs}")
     print(f"Number of training examples per epoch = {total_batch_size * num_training_steps_per_epoch}")
 
+    optimizer = create_optimizer(args=args,
+                                 model=model_without_ddp)
+    optimizer_disc = create_optimizer(args, model_without_ddp.loss.discriminator) if args.add_discriminator else None
+
+    loss_scaler = NativeScalerWithGradNormCount(enabled=True if args.model_dtype == "fp16" else False)
+    loss_scaler_disc = NativeScalerWithGradNormCount(enabled=True if args.model_dtype == "fp16" else False) if args.add_discriminator else None 
+
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(model, 
+                                                          device_ids=[args.gpu], 
+                                                          find_unused_parameters=False)
+
+        model_without_ddp = model.module 
+
+    print("Use step level LR & WD scheduler!")
     
+
+
 
     
         
