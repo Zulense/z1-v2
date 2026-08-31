@@ -16,7 +16,7 @@ RESOLUTION=256
 NUM_FRAMES=33 # 17 * context_size + 1 
 BATCH_SIZE=2
 CONTEXT_SIZE=2   # context parallel size, GPUS % CONTEXT_SIZE=0
-
+LPIPS_CKPT=/nlsasfs/home/hfgenai/mansav/z1-v2/PATH/vgg_lpips.pth
 
 
 # Run the inference script, making sure sp_group_size matches world_size
@@ -28,7 +28,30 @@ torchrun --nproc-per-node=$GPUS \
     --seed 42 \
     --context_size $CONTEXT_SIZE \
     --video_anno=$VIDEO_ANNO \
-    --batch_size=$BATCH_SIZE \ 
+    --batch_size=$BATCH_SIZE \
+    --model_dtype bf16 \
+    --use_context_parallel \ 
+    --context_size $CONTEXT_SIZE \
+    --lpips_ckpt=$LPIPS_CKPT \
+    --resolution=$RESOLUTION \
+    --disc_start 25000 \
+    --kl_weight 1e-12 \
+    --pixelloss_weight 10.0 \
+    --perceptual_weight 1.0 \
+    --disc_weight 0.5 \
+    --opt adamw \
+    --opt_betas 0.9 0.95 \
+    --seed 42 \
+    --weight_decay 1e-3 \
+    --clip_grad 1.0 \
+    --lr 1e-4 \
+    --lr_disc 1e-4 \
+    --warmup_epochs 1 \
+    --epochs 100 \ 
+    --iters_per_epoch 20000 \
+    --print_freq 40 \
+    
+
     
 
 

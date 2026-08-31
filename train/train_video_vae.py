@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import torch.backends.cudnn as cudnn
 import sys 
+from time import time 
+
 
 # Add the parent directory (z1-v2)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
@@ -13,7 +15,9 @@ from video_vae.vae_wrapper import VAELossWrapper
 from dataset.dataset_cls import VideoDataset
 from dataset.dataloaders import video_dataloaders
 
-from trainer_middleware.utils import create_optimizer, NativeScalerWithGradNormCount
+from trainer_middleware.utils import create_optimizer, NativeScalerWithGradNormCount, cosine_scheduler
+from trainer_middleware.vae_ddp_trainer import train_one_epoch
+
 
 
 def get_args():
@@ -122,8 +126,7 @@ def get_args():
 
 def build_model(args):
 
-    model = VAELossWrapper(model_dtype='fp32'
-                           )
+    model = VAELossWrapper(model_dtype='fp32')
 
     return model 
 
@@ -205,6 +208,50 @@ def main(args):
         model_without_ddp = model.module 
 
     print("Use step level LR & WD scheduler!")
+
+    lr_schedule_values = cosine_scheduler(
+        base_value=args.lr,
+        final_value=args.min_lr,
+        epochs=args.epochs,
+        niter_per_ep=num_training_steps_per_epoch,
+        warmup_epochs=args.warmup_epochs,
+        warmup_steps=args.warmup_steps
+    )
+    lr_schedule_values_disc = cosine_scheduler(
+        base_value=args.lr,
+        final_value=args.min_lr,
+        epochs=args.epochs,
+        niter_per_ep=num_training_steps_per_epoch,
+        warmup_epochs=args.warmup_epochs,
+        warmup_steps=args.warmup_steps
+    ) if args.add_discriminator else None 
+
+    print(f"Start training for {args.epochs} epochs, the global iterations is {args.global_step}")
+    start_time = time.time()
+    torch.distributed.barrier()
+
+    log_writer = None 
+    for epoch in range(args.start_epoch, args.epochs):
+
+        train_stats = train_one_epoch(model=model,
+                                      model_dtype=args.model_dtype,
+                                      data_loader=data_loader_train,
+                                      optimizer=optimizer,
+                                      optimizer_disc=optimizer_disc,
+                                      device=device,
+                                      epoch=epoch,
+                                      loss_scaler=loss_scaler,
+                                      loss_scaler_disc=loss_scaler_disc,
+                                      clip_grad=args.clip_grad,
+                                      log_writer=log_writer,
+                                      start_steps=epoch * num_training_steps_per_epoch,
+                                      lr_schedule_values=lr_schedule_values,
+                                      lr_schedule_values_disc=lr_schedule_values_disc,
+                                      args=args,
+                                      print_freq=args.print_freq,
+                                      iters_per_epoch=num_training_steps_per_epoch)
+
+        
     
 
 
