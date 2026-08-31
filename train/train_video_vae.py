@@ -189,7 +189,7 @@ def main(args):
     print(f"LR = {args.lr:.8f}")
     print(f"Min LR = {args.min_lr:.8f}")
     print(f"Weight Decay = {args.weight_decay:.8f}")
-    print(f"Batch size = {args.total_batch_size}")
+    print(f"Batch size = {total_batch_size}")
     print(f"Number of training steps = {num_training_steps_per_epoch * args.epochs}")
     print(f"Number of training examples per epoch = {total_batch_size * num_training_steps_per_epoch}")
 
