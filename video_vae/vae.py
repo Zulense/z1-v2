@@ -97,7 +97,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             block_dropout=decoder_block_dropout
         )
 
-        self.quant_conv = CausalConv3d(input_channels=2*encoder_in_channels,
+        self.quant_conv = CausalConv3d(input_channels=2*encoder_out_channels,
                                        output_chaannels=2*encoder_out_channels,
                                        kernel_size=1,
                                        stride=1
@@ -136,7 +136,11 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
 
     def _set_gradient_checkpointing(self, module, value=False):
         if isinstance(module, (self.encoder, self.decoder)):
-            module.gradient_checkpointing = value         
+            module.gradient_checkpointing = value   
+
+
+    def get_last_layer(self):
+        return self.decoder.conv_out.conv.weight      
 
 
 
@@ -150,7 +154,6 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                 temporal_chunk = False) -> Union[DecoderOutput, torch.FloatTensor]:
 
         x = sample 
-
         if is_context_parallel_initialized():
             assert self.training, "Only supports during training"
 
@@ -174,7 +177,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             if get_context_parallel_rank() == 0:
                 dec = self.decode(z, is_init_image=True).sample
 
-            return global_posterior, dec 
+            return global_posterior, dec
         
 
 

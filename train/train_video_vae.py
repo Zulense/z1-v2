@@ -126,7 +126,9 @@ def get_args():
 
 def build_model(args):
 
-    model = VAELossWrapper(model_dtype='fp32')
+    model = VAELossWrapper(model_dtype='fp32',
+                           load_loss_module=True,
+                           lpips_ckpt=args.lpips_ckpt)
 
     return model 
 
@@ -170,6 +172,8 @@ def main(args):
                                           rank=global_rank,
                                           epoch=args.seed)
     print(f"<-------------------[Dataloader] video: {data_loader_train}----------------->")
+
+    
 
     torch.distributed.barrier()
 
@@ -257,7 +261,7 @@ def main(args):
             'epoch': epoch, 'n_parameters': n_learnable_parameters
         }
 
-        
+
         
     
 

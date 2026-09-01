@@ -123,9 +123,9 @@ class CausalVaeEncoder(nn.Module):
 
         else:
             for down_block in self.down_blocks:
-                sample = down_block(sample, is_init_image, temporal_chunk)
+                sample = down_block(sample, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
 
-            sample = self.mid_block(sample, is_init_image, temporal_chunk)
+            sample = self.mid_block(sample, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
 
 
         ## post-process 
@@ -265,7 +265,7 @@ class CausalVaeDecoder(nn.Module):
             sample = sample.to(upscale_dtype)
 
             for up_block in self.up_blocks:
-                sample = self.up_block(sample, 
+                sample = up_block(sample, 
                                        is_init_image=is_init_image,
                                        temporal_chunk=temporal_chunk)
 

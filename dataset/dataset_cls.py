@@ -92,7 +92,8 @@ class VideoFrameProcessor:
         transform_list = [
             transforms.Resize(image_size,
                               interpolation=InterpolationMode.BICUBIC,
-                              antialias=True)
+                              antialias=True),
+            transforms.CenterCrop(image_size)
         ]
 
         if add_normalize:

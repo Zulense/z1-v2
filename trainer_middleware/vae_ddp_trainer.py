@@ -76,7 +76,7 @@ def train_one_epoch(
                                                  args.global_step,
                                                  identifier=samples['identifier'])
 
-            print(f"rec_loss: {rec_loss}, Gan_loss: {gan_loss}, Log_loss: {log_loss})
+            print(f"rec_loss: {rec_loss}, Gan_loss: {gan_loss}, Log_loss: {log_loss}")
 
         ###################################################################################
         # The Update of rec_loss 

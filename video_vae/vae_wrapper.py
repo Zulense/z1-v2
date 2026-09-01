@@ -32,7 +32,7 @@ class VAELossWrapper(nn.Module):
                  interpolate=True,  # i don't understand why does have initialized.
                  add_discriminator=True,
                  freeze_encoder=False,
-                 load_loss_module=False,
+                 load_loss_module=True,
                  lpips_ckpt=None,
                  **kwargs
                  ):
@@ -61,7 +61,7 @@ class VAELossWrapper(nn.Module):
                                                perceptual_weight=perceptual_weight,
                                                disc_weight=disc_weight,
                                                add_discriminator=add_discriminator,
-                                               using_3d_discriminator=False,
+                                               using_3d_discriminator=True,
                                                disc_num_layers=4,
                                                lpips_ckpt=lpips_ckpt)
 
@@ -70,8 +70,6 @@ class VAELossWrapper(nn.Module):
 
     def forward(self, x, step, identifier=['video']):
 
-
-        
         if 'video' in identifier:
             print("video are found.")
 

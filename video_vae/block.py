@@ -123,6 +123,8 @@ class DownEncoderBlockCausal3D(nn.Module):
                                    use_conv=True,
                                    )
             ])
+        else:
+            self.downsamplers = None
 
         if add_temporal_downsample:
             self.temporal_downsamplers = nn.ModuleList([
@@ -131,6 +133,8 @@ class DownEncoderBlockCausal3D(nn.Module):
                     use_conv=True,
                 )
             ])
+        else:
+            self.temporal_downsamplers = None
 
     def forward(self,
                 hidden_states: torch.FloatTensor,
