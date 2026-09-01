@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import torch.backends.cudnn as cudnn
 import sys 
-from time import time 
+import time 
 
 
 # Add the parent directory (z1-v2)
@@ -251,6 +251,13 @@ def main(args):
                                       print_freq=args.print_freq,
                                       iters_per_epoch=num_training_steps_per_epoch)
 
+        
+        log_stats = {
+            **{f'train_{k}': v for k, v in train_stats.items()},
+            'epoch': epoch, 'n_parameters': n_learnable_parameters
+        }
+
+        
         
     
 

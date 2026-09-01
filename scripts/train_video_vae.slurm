@@ -30,7 +30,7 @@ torchrun --nproc-per-node=$GPUS \
     --video_anno=$VIDEO_ANNO \
     --batch_size=$BATCH_SIZE \
     --model_dtype bf16 \
-    --use_context_parallel \ 
+    --use_context_parallel \
     --context_size $CONTEXT_SIZE \
     --lpips_ckpt=$LPIPS_CKPT \
     --resolution=$RESOLUTION \
@@ -47,7 +47,7 @@ torchrun --nproc-per-node=$GPUS \
     --lr 1e-4 \
     --lr_disc 1e-4 \
     --warmup_epochs 1 \
-    --epochs 100 \ 
+    --epochs 100 \
     --iters_per_epoch 20000 \
     --print_freq 40 \
     
