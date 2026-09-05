@@ -72,6 +72,7 @@ def train_one_epoch(
         with torch.amp.autocast(device_type="cuda",
                                 dtype=_dtype,
                                 enabled=True):
+            
             rec_loss, gan_loss, log_loss = model(samples['video'],
                                                  args.global_step,
                                                  identifier=samples['identifier'])

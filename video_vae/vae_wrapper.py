@@ -50,6 +50,10 @@ class VAELossWrapper(nn.Module):
         self.vae = CausalVideoVae()
         self.vae_scale_factor = self.vae.config.scaling_factor
 
+        # Enable Memory saving 
+        self.vae.encoder.gradient_checkpointing = True
+        self.vae.decoder.gradient_checkpointing = True
+
         self.add_discriminator = add_discriminator
 
         # Used for training.
@@ -91,6 +95,7 @@ class VAELossWrapper(nn.Module):
                                           temporal_chunk=False)
 
         # The reconstruct loss 
+        print(f"[vae_wrapper.py] what is the shape of video: {batch_x.shape}")
         reconstruct_loss, rec_log = self.loss(
             batch_x,
             reconstruct,

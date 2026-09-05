@@ -99,8 +99,8 @@ class CausalVaeEncoder(nn.Module):
         if self.training and self.gradient_checkpointing:
 
             def create_custom_forward(module):
-                def custom_forward(*inputs):
-                    return module(*inputs)
+                def custom_forward(*inputs, **kwargs):
+                    return module(*inputs, **kwargs)
                 return custom_forward
 
 
@@ -109,15 +109,15 @@ class CausalVaeEncoder(nn.Module):
                 for down_block in self.down_blocks:
                     sample = checkpoint(create_custom_forward(down_block),
                                         sample,
-                                        is_init_image,
-                                        temporal_chunk,
+                                        is_init_image=is_init_image,
+                                        temporal_chunk=temporal_chunk,
                                         use_reentrant=False)
 
                 # middle 
                 sample = checkpoint(create_custom_forward(self.mid_block),
                                     sample,
-                                    is_init_image,
-                                    temporal_chunk,
+                                    is_init_image=is_init_image,
+                                    temporal_chunk=temporal_chunk,
                                     use_reentrant=False)
 
 
@@ -244,8 +244,8 @@ class CausalVaeDecoder(nn.Module):
             if is_torch_version(">=", "1.11.0"):
                 sample = checkpoint(create_custom_function(self.mid_block),
                                     sample,
-                                    is_init_image=is_init_image,
-                                    temporal_chunk=temporal_chunk,
+                                    is_init_image,
+                                    temporal_chunk,
                                     use_reentrant=False)
                 sample = sample.to(upscale_dtype)
 
@@ -253,8 +253,8 @@ class CausalVaeDecoder(nn.Module):
                     sample = checkpoint(
                         create_custom_function(up_block),
                         sample,
-                        is_init_image=is_init_image,
-                        temporal_chunk=temporal_chunk,
+                        is_init_image,
+                        temporal_chunk,
                         use_reentrant=False
                     )
 

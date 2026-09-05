@@ -212,7 +212,7 @@ class MidBlockCausal3D(nn.Module):
                 # Spatial attention
                 attentions.append(
                     Attention(
-                        query_dim=in_channels,
+                        in_channels,
                         heads=in_channels // attention_head_dim,
                         dim_head=attention_head_dim,
                         rescale_output_factor=output_scale_factor,
@@ -260,7 +260,7 @@ class MidBlockCausal3D(nn.Module):
             if attn is not None:
                 hidden_states = rearrange(hidden_states, 'b c t h w -> b t c h w')
                 hidden_states = rearrange(hidden_states, 'b t c h w -> (b t) c h w')
-                hidden_states = attn(hidden_states, temb)
+                hidden_states = attn(hidden_states, temb=temb)
                 hidden_states = rearrange(hidden_states, '(b t) c h w -> b t c h w', t=t)
                 hidden_states = rearrange(hidden_states, 'b t c h w -> b c t h w')
 
@@ -317,6 +317,8 @@ class UpDecoderBlockCausal3D(nn.Module):
                                  use_conv=True,
                                  )
             ])
+        else:
+            self.upsamplers = None 
 
         if add_temporal_upsample:
             self.temporal_upsamplers = nn.ModuleList([
@@ -324,6 +326,8 @@ class UpDecoderBlockCausal3D(nn.Module):
                                          use_conv=True,
                                          )
             ])
+        else:
+            self.temporal_upsamplers = None
 
         self.resolution_idx = resolution_idx
 

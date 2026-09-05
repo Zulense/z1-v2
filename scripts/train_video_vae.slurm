@@ -9,11 +9,12 @@
 
 
 
+
 # Define the number of GPUs
 GPUS=2
 VIDEO_ANNO=/nlsasfs/home/hfgenai/mansav/z1-v2/annotation/class_5_math_white_board.jsonl
 RESOLUTION=256
-NUM_FRAMES=33 # 17 * context_size + 1 
+NUM_FRAMES=25   # 13 * context_size - 1 
 BATCH_SIZE=2
 CONTEXT_SIZE=2   # context parallel size, GPUS % CONTEXT_SIZE=0
 LPIPS_CKPT=/nlsasfs/home/hfgenai/mansav/z1-v2/PATH/vgg_lpips.pth
