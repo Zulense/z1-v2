@@ -54,22 +54,7 @@ class VAELossWrapper(nn.Module):
         self.vae.encoder.gradient_checkpointing = True
         self.vae.decoder.gradient_checkpointing = True
 
-        self.add_discriminator = add_discriminator
-
-        # Used for training.
-        if load_loss_module:
-            self.loss = LPIPSWithDiscriminator(disc_start=disc_start,
-                                               logvar_init=logvar_init,
-                                               kl_weight=kl_weight,
-                                               pixelloss_weight=pixelloss_weight,
-                                               perceptual_weight=perceptual_weight,
-                                               disc_weight=disc_weight,
-                                               add_discriminator=add_discriminator,
-                                               using_3d_discriminator=True,
-                                               disc_num_layers=4,
-                                               lpips_ckpt=lpips_ckpt)
-
-        self.disc_start = disc_start
+        
 
 
     def forward(self, x, step, identifier=['video']):
@@ -94,41 +79,9 @@ class VAELossWrapper(nn.Module):
                                           is_init_image=True,
                                           temporal_chunk=False)
 
-        # The reconstruct loss 
-        print(f"[vae_wrapper.py] what is the shape of video: {batch_x.shape}")
-        reconstruct_loss, rec_log = self.loss(
-            batch_x,
-            reconstruct,
-            posterior,
-            optimizer_idx=0,
-            global_step=step,
-            last_layer=self.vae.get_last_layer()
-        )
+        print(f"<--------------> Let's know the posterior: {posterior} and reconstruct: {reconstruct} <------------------>")
 
-        if step < self.disc_start:
-            return reconstruct_loss, None, rec_log
-
-
-        # The loss to train the discrimiator 
-        gan_loss, gan_log = self.loss(batch_x, 
-                                      reconstruct, 
-                                      posterior, 
-                                      optimizer_idx=1,
-                                      global_step=step,
-                                      last_layer=self.vae.get_last_layer())
-
-        loss_log = {**rec_log, **gan_log}
-
-        return reconstruct_loss, gan_loss, loss_log 
-
+        return posterior, reconstruct
     
 
         
-
-
-        
-            
-
-
-
-
