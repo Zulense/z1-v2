@@ -57,7 +57,7 @@ class VAELossWrapper(nn.Module):
         
 
 
-    def forward(self, x, step, identifier=['video']):
+    def forward(self, x, identifier=['video']):
 
         if 'video' in identifier:
             print("video are found.")

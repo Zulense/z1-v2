@@ -178,10 +178,83 @@ def main(args):
     torch.distributed.barrier()
 
     model.to(device)
+    model_without_ddp = model
 
-    for data in data_loader_train:
-        output = model(data['video'])
-        
+
+
+    
+
+    # for data in data_loader_train:
+    #     video_data = data['video'].to(device)
+    #     output = model(video_data)
+    #     print(output)
+
+    n_learnable_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    n_fix_parameters = sum(p.numel() for p in model.parameters() if not p.requires_grad)
+
+    for name, p in model.named_parameters():
+        if not p.requires_grad:
+            print(name)
+
+    print(f"Total number of learnable params: {n_learnable_parameters / 1e6} M")
+    print(f"Total number of fixed params in : {n_fix_parameters / 1e6} M")
+
+    total_batch_size = args.batch_size * get_world_size()
+    print(f"LR = {args.lr:.8f}")
+    print(f"Min LR = {args.min_lr:.8f}")
+    print(f"Weight Decay = {args.weight_decay:.8f}")
+    print(f"Batch size = {total_batch_size}")
+    print(f"Number of training steps = {num_training_steps_per_epoch * args.epochs}")
+    print(f"Number of training examples per epoch = {total_batch_size * num_training_steps_per_epoch}")
+
+
+    optimizer = create_optimizer(args, model_without_ddp.vae)
+    optimizer_disc = create_optimizer(args, model_without_ddp.loss.discriminator) if args.add_discriminator else None 
+
+    if args.distributed:
+        model = torch.nn.parallel.DistributedDataParallel(module=model,
+                                                          device_ids=[args.gpu],
+                                                          find_unused_parameters=False)
+        model_without_ddp = model.module
+
+    print("Use step level LR & WD scheduler!")
+
+    lr_schedule_values = cosine_scheduler(base_value=args.lr,
+                                        final_value=args.min_lr,
+                                        epochs=args.epochs,
+                                        niter_per_ep=num_training_steps_per_epoch,
+                                        warmup_epochs=args.warmup_epochs,
+                                        warmup_steps=args.warmup_steps)
+
+    lr_schedule_values_disc = cosine_scheduler(
+        base_value=args.lr_disc,
+        final_value=args.min_lr,
+        epochs=args.epochs,
+        niter_per_ep=num_training_steps_per_epoch,
+        warmup_epochs=args.warmup_epochs,
+        warmup_steps=args.warmup_steps
+    ) if args.add_discriminator else None
+
+    print(f"start training for {args.epochs} epochs, total global iterations is {args.global_step}")
+    torch.distributed.barrier()
+
+    for epoch in range(args.start_epoch, args.epochs):
+        train_start = train_one_epoch(model,
+                                      args.model_dtype,
+                                      data_loader_train,
+                                      optimizer,
+                                      optimizer_disc,
+                                      device,
+                                      epoch,
+                                      clip_grad=args.clip_grad,
+                                      start_steps=epoch * num_training_steps_per_epoch,
+                                      lr_schedule_values=lr_schedule_values,
+                                      lr_schedule_values_disc=lr_schedule_values_disc,
+                                      args=args,
+                                      print_freq=args.print_freq,
+                                      iters_per_epoch=num_training_steps_per_epoch)
+
+
 
     
 

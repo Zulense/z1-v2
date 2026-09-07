@@ -174,10 +174,13 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             else:
                 z = posterior.mode()
 
-            # if get_context_parallel_rank() == 0:
-            #     dec = self.decode(z, is_init_image=True).sample
-            z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
-            dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
+            if get_context_parallel_rank() == 0:
+                dec = self.decode(z, is_init_image=True).sample
+            else:
+                # Do not drop the first upsampled frame 
+                dec = self.decode(z, is_init_image=False).sample
+            # z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
+            # dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
 
             return global_posterior, dec
         
