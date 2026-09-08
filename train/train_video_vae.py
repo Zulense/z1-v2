@@ -211,6 +211,9 @@ def main(args):
     optimizer = create_optimizer(args, model_without_ddp.vae)
     optimizer_disc = create_optimizer(args, model_without_ddp.loss.discriminator) if args.add_discriminator else None 
 
+    loss_scaler = NativeScalerWithGradNormCount(enabled=True if args.model_dtype == "fp16" else False)
+    loss_scaler_disc = NativeScalerWithGradNormCount(enabled=True if args.model_dtype == "fp16" else False) if args.add_discriminator else None
+
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(module=model,
                                                           device_ids=[args.gpu],
@@ -246,6 +249,8 @@ def main(args):
                                       optimizer_disc,
                                       device,
                                       epoch,
+                                      loss_scaler=loss_scaler,
+                                      loss_scaler_disc=loss_scaler_disc,
                                       clip_grad=args.clip_grad,
                                       start_steps=epoch * num_training_steps_per_epoch,
                                       lr_schedule_values=lr_schedule_values,
