@@ -68,10 +68,10 @@ class DownsampleCausal3D(nn.Module):
 
         assert hidden_states.shape[1] == self.channels
 
-        
-        t = hidden_states.shape[2]
-        hidden_states = rearrange(hidden_states, 
-                                  'b c t h w -> (b t) c h w')
+        # For video
+        # t = hidden_states.shape[2]
+        # hidden_states = rearrange(hidden_states, 
+        #                           'b c t h w -> (b t) c h w')
 
         if self.norm is not None:
             # hidden_states = self.norm(hidden_states.permute(0, 2, 3, 1))
@@ -83,8 +83,9 @@ class DownsampleCausal3D(nn.Module):
 
         assert hidden_states.shape[1] == self.channels
 
-        hidden_states = rearrange(hidden_states,
-                                  '(b t) c h w -> b c t h w', t=t)
+        # for video
+        # hidden_states = rearrange(hidden_states,
+        #                           '(b t) c h w -> b c t h w', t=t)
         hidden_states = self.conv(hidden_states)
 
         return hidden_states
@@ -220,7 +221,7 @@ class ResnetBlockCausal3D(nn.Module):
                  skip_time_act: bool = False,
                  time_embedding_norm: str = "default",  # # default, scale_shift, ada_group, spatial
                  kernel: Optional[torch.FloatTensor] = None,
-                 output_scale_factor: Optional[bool] = None,
+                 output_scale_factor: Optional[bool] = True,
                  use_in_shortcut: Optional[bool] = None,
                  up: bool = False,
                  down: bool = False,
@@ -246,9 +247,9 @@ class ResnetBlockCausal3D(nn.Module):
         if groups_out is None:
             groups_out = groups
 
-        if self.time_embedding_norm == "ada_group":
+        if self.time_embedding_norm == "ada_group":   # for Image
             self.norm1 = AdaGroupNorm(temb_channels, out_channels, groups_out, eps=eps)
-        elif self.time_embedding_norm == "spatial":
+        elif self.time_embedding_norm == "spatial":     # for Image
             self.norm1 = SpatialNorm(in_channels, temb_channels)
         else:
             self.norm1 = nn.GroupNorm(groups, in_channels, eps=eps, affine=True)
@@ -290,7 +291,7 @@ class ResnetBlockCausal3D(nn.Module):
                               stride=1)
 
         self.nonlinearity = get_activation(non_linearity)
-        self.upsample = self.downsample = None 
+        self.upsample = self.downsample = None
         if self.up:
             self.upsample = UpsampleCausal3D(in_channels, use_conv=False)
         elif self.down:
@@ -315,6 +316,87 @@ class ResnetBlockCausal3D(nn.Module):
                 ) -> torch.FloatTensor:
 
         hidden_states = input_tensor
+        
+
+        if self.time_embedding_norm == "ada_group" or self.time_embedding_norm == "spatial":
+            hidden_states = self.norm1(hidden_states, temb)
+        else:
+            hidden_states = self.norm1(hidden_states)
+        
+
+        hidden_states = self.nonlinearity(hidden_states)
+
+        if self.upsample is not None:
+            if hidden_states.shape[0] >= 64:
+                input_tensor = input_tensor.contiguous()
+                hidden_states = hidden_states.contiguous()
+
+            input_tensor = (
+                self.upsample(input_tensor, scale=scale)
+            )
+            hidden_states = (
+                self.upsample(hidden_states, scale=scale)
+            )
+
+        elif self.downsample is not None:
+            input_tensor = (
+                self.downsample(input_tensor, scale=scale)
+            )
+            hidden_states = (
+                self.downsample(hidden_states, scale=scale)
+            )
+
+        hidden_states = self.conv1(hidden_states)
+
+        if self.time_emb_proj is not None:
+            if not self.skip_time_act:
+                temb = self.nonlinearity(temb)
+
+            temb = (
+                self.time_emb_proj(temb)[:, :, None, None]
+            )
+
+        ## [video] Testing
+        # temb = temb[:, :, :, :, None]
+
+        
+        if temb is not None and self.time_embedding_norm == "default":
+            hidden_states = hidden_states + temb  # ([32, 128, 2, 32, 32]) + ([32, 128, 1, 1])
+
+        if self.time_embedding_norm == "ada_group" or self.time_embedding_norm == "spatial":
+            hidden_states = self.norm2(hidden_states, temb)
+        else:
+            hidden_states = self.norm2(hidden_states)
+
+        if temb is not None and self.time_embedding_norm == "scale_shift":
+            scale, shift = torch.chunk(temb, 2, dim=1)
+            hidden_states = hidden_states * (1 + scale) + shift
+
+        hidden_states = self.nonlinearity(hidden_states)
+
+        hidden_states = self.dropout(hidden_states)
+        hidden_states = self.conv2(hidden_states)
+
+        if self.conv_shortcut is not None:
+            input_tensor = (
+                self.conv_shortcut(input_tensor)
+            )
+
+        output_tensor = (input_tensor + hidden_states) / self.output_scale_factor
+        return output_tensor
+
+
+        
+
+        
+
+            
+
+
+            
+
+
+
 
         
     
@@ -358,9 +440,11 @@ if __name__ == "__main__":
     model = ResnetBlockCausal3D(in_channels=128,
                                 out_channels=128,
                                 kernel=3,
+                                time_embedding_norm="default"
                                 )
 
     out = model(x, temb)
+    # print(out)
 
     
     
