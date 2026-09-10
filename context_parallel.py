@@ -130,7 +130,7 @@ def _cp_pass_from_previous_rank(input_, dim, kernel_size):
     cp_group_rank = get_context_parallel_group_rank()
     cp_world_size = get_context_parallel_world_size()
 
-    # print('in _pass_from_previous_rank, cp_rank:', cp_rank, 'input_size:', input_.shape)
+    print('in _pass_from_previous_rank, cp_rank:', cp_rank, 'input_size:', input_.shape)
 
     global_rank = torch.distributed.get_rank()
     global_world_size = torch.distributed.get_world_size()
@@ -204,7 +204,7 @@ def _conv_gather(input_, dim=2, kernel_size=1):
     group = get_context_parallel_group()
     cp_rank = get_context_parallel_rank()
 
-    print(f"function [_conv_gather] Input cp_rank: {cp_rank}, input_size: {input_.shape}")
+    # print(f"function [_conv_gather] Input cp_rank: {cp_rank}, input_size: {input_.shape}")
 
     input_first_kernel_ = input_.transpose(0, dim)[:kernel_size].transpose(0, dim).contiguous()
     if cp_rank == 0:

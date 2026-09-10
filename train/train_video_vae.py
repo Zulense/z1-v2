@@ -221,7 +221,6 @@ def main(args):
         model_without_ddp = model.module
 
     print("Use step level LR & WD scheduler!")
-
     lr_schedule_values = cosine_scheduler(base_value=args.lr,
                                         final_value=args.min_lr,
                                         epochs=args.epochs,

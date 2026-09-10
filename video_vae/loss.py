@@ -35,7 +35,7 @@ class LPIPSWithDiscriminator(nn.Module):
         self.logvar = nn.Parameter(torch.ones(size=()) * logvar_init)
 
         if add_discriminator:
-            disc_cls = NLayerDiscriminator3D if using_3d_discriminator else None 
+            disc_cls = NLayerDiscriminator3D
             self.discriminator = disc_cls(
                 input_nc=disc_in_channels, n_layers=disc_num_layers,
             ).apply(weights_init)

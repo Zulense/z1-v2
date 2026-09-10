@@ -9,7 +9,7 @@ from pathlib import Path
 from collections import deque, defaultdict
 import torch.distributed as dist
 import time 
-from datetime import datetime
+import datetime
 
 
 # Add the parent directory (z1-v2)
@@ -253,7 +253,7 @@ class SmoothedValue(object):
 
     @property
     def global_avg(self):
-        return self.total / self.count
+        return self.total / float(self.count) # [28.739131689071655 / 1], [0.0, 0]
 
     @property
     def max(self):
