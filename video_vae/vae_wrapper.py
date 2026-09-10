@@ -89,7 +89,7 @@ class VAELossWrapper(nn.Module):
         else:
             batch_x = x 
 
-
+        print(f"<-----------------> [vae_wrapper.py] what is the shape of video data: {batch_x.shape} <--------------->")
         posterior, reconstruct = self.vae(batch_x,
                                           is_init_image=True,
                                           temporal_chunk=False)
