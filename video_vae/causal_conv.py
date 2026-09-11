@@ -83,6 +83,7 @@ class CausalConv3d(nn.Module):
         cp_rank = get_context_parallel_rank()
         if self.time_kernel_size == 3 and ((cp_rank == 0 and x.shape[2] <= 2) or (cp_rank != 0 and x.shape[2] <= 1)):
 
+            print(f"[conv.py], just print condition self.time_kernel_size == 4: {self.time_kernel_size == 3} and ((cp_rank == 0 : {cp_rank==0} and x.shape[2] <= 2: {x.shape[2] <= 2}) or (cp_rank != 0: {cp_rank != 0} and x.shape[2] <= 1: {x.shape[2 <= 1]}))")
             # This code is only for training 8frames per gpu (except for cp_rank=0)
             x = cp_pass_from_previous_rank(x, dim=2, kernel_size=2) # pass one latent 
             trans_x = cp_pass_from_previous_rank(input_=x[:, :, :-1],

@@ -78,7 +78,7 @@ class DownsampleCausal3D(nn.Module):
             hidden_states = hidden_states.permute(0, 2, 3, 1)
             hidden_states = self.norm(hidden_states)
             hidden_states = hidden_states.permute(0, 3, 1, 2)
-            print(hidden_states.shape)
+            # print(hidden_states.shape)
          
 
         assert hidden_states.shape[1] == self.channels

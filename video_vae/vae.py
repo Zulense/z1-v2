@@ -165,6 +165,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             else:
                 h = self.encoder(x, is_init_image=True, temporal_chunk=False)
                 moments = self.quant_conv(h, is_init_image=True, temporal_chunk=False)
+                print(f"[vae.py] <---------------- what is the shpae of encoder={moments.shape} --------------------->")
                 posterior = DiagonalGaussianDistribution(moments)
                 global_moments = conv_gather_from_context_parallel_region(moments, dim=2, kernel_size=1)
                 global_posterior = DiagonalGaussianDistribution(global_moments)

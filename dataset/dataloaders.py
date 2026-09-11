@@ -3,6 +3,8 @@ from torch.utils.data import DataLoader, DistributedSampler
 from torch.utils.data.dataloader import default_collate
 import time
 
+from .dataset_cls import VideoDataset
+
 class IterLoader:
 
     """

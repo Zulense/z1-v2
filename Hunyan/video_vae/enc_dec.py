@@ -1,9 +1,11 @@
 from torch import nn 
 import torch 
 from typing import Tuple
+import numpy as np 
 
 from .conv import Causal3d
-import numpy as np 
+from .block import get_down_block3d
+
 
 
 
@@ -50,9 +52,29 @@ class EncoderCausal3D(nn.Module):
                     i >= (len(block_out_channels) - 1 - num_time_downsample_layers)  # [0>=4-1-2], [1>=4-1-2], [2>=4-1-2], [3>=4-1-2]
                     and not is_final_block
                 )
-                print(f"{len(block_out_channels) -1 - num_time_downsample_layers}")
             else:
                 raise ValueError(f"Unsupported time_compression_ratio: {time_compression_ratio}")
+
+            downsample_stride_HW = (2, 2) if add_spatial_downsample else (1, 1)
+            downsample_stride_T = (2,) if add_time_downsample else (1,)
+            downsample_stride = tuple(downsample_stride_T + downsample_stride_HW)
+            down_block = get_down_block3d(
+                down_block_type=down_block_type,
+                num_layers=self.layers_per_block,
+                in_channels=input_channels,
+                out_channels=output_channels,
+                add_downsample=bool(add_spatial_downsample or add_time_downsample),
+                downsample_stride=downsample_stride,
+                resnet_eps=1e-6,
+                downsample_padding=0,
+                resnet_act_fn=act_fn,
+                resnet_groups=norm_num_groups,
+                attention_head_dim=output_channels
+            )
+            self.down_blocks.append(down_block)
+
+
+
 
 
 
@@ -69,7 +91,7 @@ class EncoderCausal3D(nn.Module):
         # down 
         for down_block in self.down_blocks:
             sample = down_block(sample)
-            # print(sample.shape)
+            print(sample.shape)
 
 
 

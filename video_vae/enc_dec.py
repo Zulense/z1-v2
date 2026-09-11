@@ -123,6 +123,7 @@ class CausalVaeEncoder(nn.Module):
 
         else:
             for down_block in self.down_blocks:
+                print(f"[enc_dec.py]<----------------------> what is the shape of [down_block] sample={sample} <----------------------->")
                 sample = down_block(sample, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
 
             sample = self.mid_block(sample, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
