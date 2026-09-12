@@ -12,9 +12,10 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from context_parallel import (
     get_context_parallel_rank,
-    cp_pass_from_previous_rank,
     is_context_parallel_initialized
 )
+
+from .context_parallel_ops import cp_pass_from_previous_rank
 
 def is_odd(num):
     return num % 2 != 0 
