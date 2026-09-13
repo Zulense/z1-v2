@@ -118,107 +118,14 @@ def init_distributed_mode(args, init_pytorch_ddp=True):
 
 
 
-#--- part3
 
-
-
-
-
-##--- part4
 def is_context_parallel_initialized():
     if _CONTEXT_PARALLEL_GROUP is None:
         return False
     else:
         return True
 
-## <-- part 5 --> 
-def _conv_gather(input_, dim=2, kernel_size=1):
 
-    cp_world_size = get_context_parallel_world_size()
-
-    # Bypass the function if context parallel is 1 
-    if cp_world_size == 1:
-        return input_ 
-
-    group = get_context_parallel_group()
-    cp_rank = get_context_parallel_rank()
-
-    # print(f"function [_conv_gather] Input cp_rank: {cp_rank}, input_size: {input_.shape}")
-
-    input_first_kernel_ = input_.transpose(0, dim)[:kernel_size].transpose(0, dim).contiguous()
-    if cp_rank == 0:
-        # it doesn't have a `previous` rank, so it has no left-halo to strip. It simply takes everything after the `kernel_size` (which will be stitched back to `input_first_kernel_` shortly)
-        input_ = input_.transpose(0, dim)[kernel_size:].transpose(0, dim).contiguous()
-    else:
-        # if `cp_rank>0`: These ranks do contain overlapping left-halo elements from the previous rank (specifically `kernel_size -1` elements). 
-        input_ = input_.transpose(0, dim)[max(kernel_size - 1, 0) :].transpose(0, dim).contiguous()
-
-    tensor_list = [torch.empty_like(torch.cat([input_first_kernel_, input_],
-                                              dim=dim))] + \
-                    [torch.empty_like(input_) for _ in range(cp_world_size - 1)]
-
-    if cp_rank == 0:
-        input_ = torch.cat([input_first_kernel_, input_], dim=dim)
-
-    tensor_list[cp_rank] = input_
-    torch.distributed.all_gather(tensor_list, input_, group=group)
-
-    # Note= torch.cat already create a contiguous() tensor 
-    output = torch.cat(tensor_list, dim=dim).contiguous()
-
-    print(f"function [_conv_gather] Output cp_rank: {cp_rank}, input_size: {output.shape}")
-
-    return output
-
-
-def _conv_split(input_, dim=2, kernel_size=1):
-    cp_world_size = get_context_parallel_world_size()
-
-    # Bypass the function if context parallel is 1
-    if cp_world_size == 1:
-        return input_
-
-    # print('in _conv_split, cp_rank:', cp_rank, 'input_size:', input_.shape)
-
-    cp_rank = get_context_parallel_rank()
-
-    dim_size = (input_.size()[dim] - kernel_size) // cp_world_size
-
-    if cp_rank == 0:
-        output = input_.transpose(dim, 0)[: dim_size + kernel_size].transpose(dim, 0)
-    else:
-        # output = input_.transpose(dim, 0)[cp_rank * dim_size + 1:(cp_rank + 1) * dim_size + kernel_size].transpose(dim, 0)
-        output = input_.transpose(dim, 0)[
-            cp_rank * dim_size + kernel_size : (cp_rank + 1) * dim_size + kernel_size
-        ].transpose(dim, 0)
-    output = output.contiguous()
-
-    # print('out _conv_split, cp_rank:', cp_rank, 'input_size:', output.shape)
-
-    return output
-
-
-class _ConvGatherFromContextParallelRegion(torch.autograd.Function):
-
-    @staticmethod
-    def forward(ctx, input_, dim, kernel_size):
-        ctx.dim = dim 
-        ctx.kernel_size = kernel_size
-        return _conv_gather(input_, dim, kernel_size)
-
-
-    @staticmethod
-    def backward(ctx, grad_outputs):
-        return _conv_split(input_=grad_outputs,
-                           dim=ctx.dim,
-                           kernel_size=ctx.kernel_size), None, None
-
-
-def conv_gather_from_context_parallel_region(input_,
-                                             dim,
-                                             kernel_size):
-
-    return _ConvGatherFromContextParallelRegion.apply(input_, dim, kernel_size)
 
 
 # ------

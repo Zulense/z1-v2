@@ -174,3 +174,20 @@ def _conv_split(input_, dim=2, kernel_size=1):
     return output
 
 
+## <------------------------------------------------------------> ##
+## <---- THIS CODE ARE WORK ON `vae.py` file ------------> ##
+## <-------------------------------------------------------------> ##
+
+def conv_gather_from_context_parallel_region(input_, dim, kernel_size):
+    return _ConvolutionGatherFromContextParallelRegion.apply(input_, dim, kernel_size)
+
+class _ConvolutionGatherFromContextParallelRegion(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input_, dim, kernel_size):
+        ctx.dim = dim
+        ctx.kernel_size = kernel_size
+        return _conv_gather(input_, dim, kernel_size)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        return _conv_split(grad_output, ctx.dim, ctx.kernel_size), None, None
