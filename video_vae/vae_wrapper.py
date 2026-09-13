@@ -11,8 +11,8 @@ from context_parallel import (
         get_context_parallel_world_size, 
         get_context_parallel_group_rank, 
         get_context_parallel_group,
-        conv_scatter_to_context_parallel_region
         )
+from .context_parallel_ops import conv_scatter_to_context_parallel_region
 
 from .loss import LPIPSWithDiscriminator
 
@@ -94,7 +94,7 @@ class VAELossWrapper(nn.Module):
                                           is_init_image=True,
                                           temporal_chunk=False)
 
-        print(f"<--------------> [vae_wrapper.py] Let's know the posterior: {posterior} and reconstruct: {reconstruct} <------------------>")
+        print(f"<--------------> [vae_wrapper.py] Let's know the posterior: {posterior} and reconstruct: {reconstruct.shape} <------------------>")
 
         # The reconstruct loss 
         reconstruct_loss, rec_log = self.loss(

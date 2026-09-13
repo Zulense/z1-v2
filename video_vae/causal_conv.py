@@ -84,7 +84,9 @@ class CausalConv3d(nn.Module):
         cp_rank = get_context_parallel_rank()
         if self.time_kernel_size == 3 and ((cp_rank == 0 and x.shape[2] <= 2) or (cp_rank != 0 and x.shape[2] <= 1)):
 
-            print(f"[conv.py], just print condition self.time_kernel_size == 4: {self.time_kernel_size == 3} and ((cp_rank == 0 : {cp_rank==0} and x.shape[2] <= 2: {x.shape[2] <= 2}) or (cp_rank != 0: {cp_rank != 0} and x.shape[2] <= 1: {x.shape[2 <= 1]}))")
+            ## if the computer are working with tiny video clips (just 1 or 2 frames) and the viewing window (`time_kernel_size`) is exactly 3 frames, 
+            ## the code has a custom rule. It manually passes single frames step-by-step and glues them together to build enough context to do the math.
+            
             # This code is only for training 8frames per gpu (except for cp_rank=0)
             x = cp_pass_from_previous_rank(x, dim=2, kernel_size=2) # pass one latent 
             trans_x = cp_pass_from_previous_rank(input_=x[:, :, :-1],
@@ -94,6 +96,7 @@ class CausalConv3d(nn.Module):
                           dim=2)
 
         else:
+            ## to automatically grab the exact number of frames it needs from the previous computer.
             x = cp_pass_from_previous_rank(input_=x,
                                            dim=2,
                                            kernel_size=self.time_kernel_size)
