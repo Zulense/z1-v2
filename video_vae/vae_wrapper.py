@@ -85,9 +85,9 @@ class VAELossWrapper(nn.Module):
             torch.distributed.broadcast(x, 
                                         src=global_src_rank,
                                          group=get_context_parallel_group())
+            # # Cuts the video along the time dimension (dim=2) and gives a piece to each GPU to save memory.
             batch_x = conv_scatter_to_context_parallel_region(x, dim=2, kernel_size=1)
-        else:
-            batch_x = x 
+        
 
         print(f"<-----------------> [vae_wrapper.py] what is the shape of video data: {batch_x.shape} <--------------->")
         posterior, reconstruct = self.vae(batch_x,
