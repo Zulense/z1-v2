@@ -31,17 +31,7 @@ def train_one_epoch(
 
     # The trainer for causal video vae 
     model.train()
-    metric_logger = MetricLogger(delimiter=" ")
-
-    if optimizer is not None:
-        metric_logger.add_meter("lr", SmoothedValue(window_size=1, fmt='{value:.6f}'))
-        metric_logger.add_meter("min_lr", SmoothedValue(window_size=1, fmt='{value:.6f}'))
-
-    if optimizer_disc is not None:
-        metric_logger.add_meter('disc_lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
-        metric_logger.add_meter('disc_min_lr', SmoothedValue(window_size=1, fmt='{value:.6f}'))
-
-    header = f'Epoch: [{epoch}]'
+  
 
     if model_dtype == 'bf16':
         _dtype = torch.bfloat16
@@ -50,20 +40,12 @@ def train_one_epoch(
 
     print(f"Start training epoch {epoch}, {iters_per_epoch} iters per inner epoch.")
 
-    for step in metric_logger.log_every(range(iters_per_epoch), print_freq, header):
+    for step in range(iters_per_epoch):
         if step >= iters_per_epoch:
             break
 
-        it = start_steps + step  # global training iteration.
-        if lr_schedule_values is not None:
-            for i, param_group in enumerate(optimizer.param_groups):
-                if lr_schedule_values is not None:
-                    param_group["lr"] = lr_schedule_values[it] * param_group.get("lr_scale", 1.0)
-
-        if optimizer_disc is not None:
-            for i, param_group in enumerate(optimizer_disc.param_groups):
-                if lr_schedule_values_disc is not None:
-                    param_group["lr"] = lr_schedule_values_disc[it] * param_group.get("lr_scale", 1.0)
+       
+        
 
         samples = next(data_loader)
 

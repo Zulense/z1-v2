@@ -110,10 +110,12 @@ class _ConvolutionScatterToContextParallelRegion(torch.autograd.Function):
     def forward(ctx, input_, dim, kernel_size):
         ctx.dim = dim
         ctx.kernel_size = kernel_size
+        # torch.Size([2, 3, 33, 256, 256]) -> torch.Size([2, 3, 17, 256, 256])
         return _conv_split(input_, dim, kernel_size)
 
     @staticmethod
     def backward(ctx, grad_output):
+        # torch.Size([2, 8, 3, 32, 32]) -> torch.Size([2, 8, 5, 32, 32]) => gather the last frame of each Rank.
         return _conv_gather(grad_output, ctx.dim, ctx.kernel_size), None, None
 
 
@@ -231,6 +233,7 @@ class _ConvolutionGatherFromContextParallelRegion(torch.autograd.Function):
     def forward(ctx, input_, dim, kernel_size):
         ctx.dim = dim
         ctx.kernel_size = kernel_size
+        # input=torch.Size([2, 8, 3, 32, 32]) -> torch.Size([2, 8, 5, 32, 32])
         return _conv_gather(input_, dim, kernel_size)
 
     @staticmethod

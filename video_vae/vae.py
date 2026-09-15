@@ -57,7 +57,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                      "UpDecoderBlockCausal3D"
                  ),
                  decoder_block_out_channels: Tuple[int, ...] = (128, 256, 512, 512),
-                 decoder_spatial_up_sample: Tuple[bool, ...] = (True, True, Tuple, False),
+                 decoder_spatial_up_sample: Tuple[bool, ...] = (True, True, True, False),
                  decoder_temporal_up_sample: Tuple[bool, ...] = (True, True, True, False),
                  decoder_block_dropout: Tuple[int, ...] = (0.0, 0.0, 0.0, 0.0),
                  decoder_act_fn: str = "silu",
@@ -166,14 +166,20 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                 "because `learnable parameters` are off and decoder are biased data take.")
 
             else:
+                # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 8, 3, 32, 32])
                 h = self.encoder(x, is_init_image=True, temporal_chunk=False)
+                # torch.Size([2, 8, 3, 32, 32]) -> torch.Size([2, 8, 3, 32, 32])
                 moments = self.quant_conv(h, is_init_image=True, temporal_chunk=False)
-                print(f"[vae.py] <---------------- what is the shpae of encoder={moments.shape} --------------------->")
+                # torch.Size([2, 8, 3, 32, 32]) -> DiagonalGaussianDistribution=<video_vae.enc_dec.DiagonalGaussianDistribution object at 0x7fa063b514b0>
                 posterior = DiagonalGaussianDistribution(moments)
+
+                # torch.Size([2, 8, 3, 32, 32]) -> torch.Size([2, 8, 5, 32, 32])
                 global_moments = conv_gather_from_context_parallel_region(moments, dim=2, kernel_size=1)
+                # torch.Size([2, 8, 5, 32, 32]) -> <video_vae.enc_dec.DiagonalGaussianDistribution object at 0x7fa063b51600>
                 global_posterior = DiagonalGaussianDistribution(global_moments)
 
             if sample_posterior:
+                # DiagonalGaussianDistribution=<video_vae.enc_dec.DiagonalGaussianDistribution object at 0x7fa063b514b0> -> torch.Size([2, 4, 3, 32, 32])
                 z = posterior.sample(generator=generator)
             else:
                 z = posterior.mode()
@@ -204,13 +210,16 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
         # checks if spatial tiling is enabled AND if the width ([-1]) or height ([-2]) of the latent exceeds the safe limit.
         # if it is too big, it rotues to `tiled_decode` to prevent GPU memory crashed.
         if self.use_tiling and (z.shape[-1] > self.tile_latent_min_size or z.shape[-2] > self.tile_latent_min_size):
+            assert ValueError
             logger.warning("latent shape are more than: [:, :, :, 32, 32], But `tile_decode` Function does not Execute...")
             return self.tiled_decode()
 
         if temporal_chunk:
+            assert ValueError
             # dec = self.chunk_decode(z, window_size=window_size)
             logger.warning("Temporal Chunk is Enable But Funcation does not Execute...")
         else:
+            # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 4, 3, 32, 32])
             z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
             dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
 

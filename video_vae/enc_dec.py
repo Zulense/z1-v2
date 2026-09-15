@@ -33,7 +33,7 @@ class CausalVaeEncoder(nn.Module):
         self.layers_per_block = layers_per_block
 
         self.conv_in = CausalConv3d(in_channels,
-                                    output_chaannels=block_out_channels[0],  # (64, 128, 512, 512)
+                                    output_chaannels=block_out_channels[0],  # (128, 256, 512, 512)
                                     kernel_size=3,
                                     stride=1
                                     )
@@ -92,6 +92,7 @@ class CausalVaeEncoder(nn.Module):
                 is_init_image=True,
                 temporal_chunk=False) -> torch.FloatTensor:
 
+        # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         sample = self.conv_in(sample,
                               is_init_image=is_init_image,
                               temporal_chunk=temporal_chunk)
@@ -107,6 +108,7 @@ class CausalVaeEncoder(nn.Module):
             # Down Block 
             if is_torch_version(">=", "1.11.0"):
                 for down_block in self.down_blocks:
+                    # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 9, 128, 128]), torch.Size([2, 256, 5, 64, 64]), torch.Size([2, 512, 3, 32, 32]), torch.Size([2, 512, 3, 32, 32])
                     sample = checkpoint(create_custom_forward(down_block),
                                         sample,
                                         is_init_image=is_init_image,
@@ -114,28 +116,24 @@ class CausalVaeEncoder(nn.Module):
                                         use_reentrant=False)
 
                 # middle 
+                # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
                 sample = checkpoint(create_custom_forward(self.mid_block),
                                     sample,
                                     is_init_image=is_init_image,
                                     temporal_chunk=temporal_chunk,
                                     use_reentrant=False)
-
-
-        else:
-            for down_block in self.down_blocks:
-                print(f"[enc_dec.py]<----------------------> what is the shape of [down_block] sample={sample.shape} <----------------------->")
-                sample = down_block(sample, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
-
-            sample = self.mid_block(sample, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
-
+                
 
         ## post-process 
+        # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
         sample = self.conv_norm_out(sample)
+        # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
         sample = self.conv_act(sample)
+        # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 8, 3, 32, 32])
         sample = self.conv_out(sample, 
                                is_init_image=is_init_image, 
                                temporal_chunk=temporal_chunk)
-
+        
         return sample 
 
 
@@ -228,14 +226,14 @@ class CausalVaeDecoder(nn.Module):
                 temporal_chunk=False,
                 ) -> torch.FloatTensor:
 
+        # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
         sample = self.conv_in(sample,
                               is_init_image,
                               temporal_chunk)
-
+        
 
         upscale_dtype = next(iter(self.up_blocks.parameters())).dtype 
         if self.training and self.gradient_checkpointing:
-
             def create_custom_function(module):
                 def custom_forward(*inputs):
                     return module(*inputs)
@@ -243,14 +241,16 @@ class CausalVaeDecoder(nn.Module):
 
 
             if is_torch_version(">=", "1.11.0"):
+                # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
                 sample = checkpoint(create_custom_function(self.mid_block),
                                     sample,
                                     is_init_image,
                                     temporal_chunk,
                                     use_reentrant=False)
                 sample = sample.to(upscale_dtype)
-
+                
                 for up_block in self.up_blocks:
+                    # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 5, 64, 64]), torch.Size([2, 512, 9, 128, 128]), torch.Size([2, 256, 17, 256, 256]), torch.Size([2, 128, 17, 256, 256])
                     sample = checkpoint(
                         create_custom_function(up_block),
                         sample,
@@ -258,22 +258,17 @@ class CausalVaeDecoder(nn.Module):
                         temporal_chunk,
                         use_reentrant=False
                     )
+                    
 
-        else:
-            sample = self.mid_block(sample, 
-                                    is_init_image=is_init_image,
-                                    temporal_chunk=temporal_chunk)
-            sample = sample.to(upscale_dtype)
-
-            for up_block in self.up_blocks:
-                sample = up_block(sample, 
-                                       is_init_image=is_init_image,
-                                       temporal_chunk=temporal_chunk)
+       
 
 
         # POST-PROCESS 
+        # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         sample = self.conv_norm_out(sample)
+        # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         sample = self.conv_act(sample)
+        # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 3, 17, 256, 256])
         sample = self.conv_out(sample, 
                                is_init_image=is_init_image,
                                temporal_chunk=temporal_chunk)
@@ -290,11 +285,14 @@ class DiagonalGaussianDistribution(object):
 
         self.parameters = parameters
         self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)
+        print("[vae.py] <------------- [DiagonalGaussianDistribution] what does have self.logvar={self.logvar} ")
         self.logvar = torch.clamp(self.logvar, -30.0, 20.0)
         self.deterministic = deterministic
 
         self.std = torch.exp(0.5 * self.logvar)
         self.var = torch.exp(self.logvar)
+        print("[vae.py] <------------- [DiagonalGaussianDistribution] what does have self.mean, self.logvar={self.mean, self.logvar}, self.std={self.std}, self.var={self.var} -----------------> ")
+
         if self.deterministic:
             self.var = self.std = torch.zeros_like(
                 self.mean, device=self.parameters.device, dtype=self.parameters.dtype
@@ -302,6 +300,8 @@ class DiagonalGaussianDistribution(object):
 
     def sample(self,
                generator: Optional[torch.Generator] = None) -> torch.FloatTensor:
+
+        print(f"<------------------- [vae.py] [DiagonalGaussianDistribution] Just know some Data, self.mean.shape={self.mean.shape}, generator={generator} ------------->")
 
         # make sure sample is on the same device as the parameters and has same dtype 
         sample = randn_tensor(

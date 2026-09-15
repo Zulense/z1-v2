@@ -85,28 +85,21 @@ class VAELossWrapper(nn.Module):
             torch.distributed.broadcast(x, 
                                         src=global_src_rank,
                                          group=get_context_parallel_group())
-            # # Cuts the video along the time dimension (dim=2) and gives a piece to each GPU to save memory.
+            
+            ## Cuts the video along the time dimension (dim=2) and gives a piece to each GPU to save memory.
+            # torch.Size([2, 3, 33, 256, 256]) -> torch.Size([2, 3, 17, 256, 256]) for Rank=0
             batch_x = conv_scatter_to_context_parallel_region(x, dim=2, kernel_size=1)
         
 
-        print(f"<-----------------> [vae_wrapper.py] what is the shape of video data: {batch_x.shape} <--------------->")
         posterior, reconstruct = self.vae(batch_x,
                                           is_init_image=True,
                                           temporal_chunk=False)
 
-        print(f"<--------------> [vae_wrapper.py] Let's know the posterior: {posterior} and reconstruct: {reconstruct.shape} <------------------>")
-
-        # The reconstruct loss 
-        reconstruct_loss, rec_log = self.loss(
-            batch_x, reconstruct, posterior, optimizer_idx=0, global_step=step, last_layer=self.vae.get_last_layer()
-        )
-
-        print(f"<--------------> [vae_wrapper.py] Let's know the reconstruct_loss: {reconstruct_loss} and rec_log: {rec_log} <------------------>")
+       
 
 
 
-
-        return reconstruct_loss, rec_log
+        return posterior, reconstruct
     
 
         

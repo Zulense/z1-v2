@@ -290,8 +290,8 @@ class CausalTemporalUpsample2x(nn.Module):
         hidden_states = rearrange(hidden_states,
                                   'b (c p) t h w -> b c (t p) h w', p=2)
 
-        if is_init_image:
-            hidden_states = hidden_states[:, :, 1:]
+        # [:, :, [2T - 1]]
+        hidden_states = hidden_states[:, :, 1:]
 
         return hidden_states
     
