@@ -284,15 +284,17 @@ class DiagonalGaussianDistribution(object):
                  deterministic: bool = False):
 
         self.parameters = parameters
+        # torch.Size([2, 4, 3, 32, 32]),  torch.Size([2, 4, 3, 32, 32])
         self.mean, self.logvar = torch.chunk(parameters, 2, dim=1)
-        print("[vae.py] <------------- [DiagonalGaussianDistribution] what does have self.logvar={self.logvar} ")
+        # torch.Size([2, 4, 3, 32, 32])
         self.logvar = torch.clamp(self.logvar, -30.0, 20.0)
         self.deterministic = deterministic
 
+        # torch.Size([2, 4, 3, 32, 32])
         self.std = torch.exp(0.5 * self.logvar)
+        # torch.Size([2, 4, 3, 32, 32])
         self.var = torch.exp(self.logvar)
-        print("[vae.py] <------------- [DiagonalGaussianDistribution] what does have self.mean, self.logvar={self.mean, self.logvar}, self.std={self.std}, self.var={self.var} -----------------> ")
-
+        
         if self.deterministic:
             self.var = self.std = torch.zeros_like(
                 self.mean, device=self.parameters.device, dtype=self.parameters.dtype
@@ -301,8 +303,6 @@ class DiagonalGaussianDistribution(object):
     def sample(self,
                generator: Optional[torch.Generator] = None) -> torch.FloatTensor:
 
-        print(f"<------------------- [vae.py] [DiagonalGaussianDistribution] Just know some Data, self.mean.shape={self.mean.shape}, generator={generator} ------------->")
-
         # make sure sample is on the same device as the parameters and has same dtype 
         sample = randn_tensor(
             self.mean.shape,
@@ -310,6 +310,7 @@ class DiagonalGaussianDistribution(object):
             device=self.parameters.device,
             dtype=self.parameters.dtype
         )
+        # torch.Size([2, 4, 3, 32, 32]) + torch.Size([2, 4, 3, 32, 32]) * 
         x = self.mean + self.std * sample 
         return x 
 

@@ -108,7 +108,7 @@ class UNetMidBlockCausal3D(nn.Module):
                  dropout: float = 0.0,
                  num_layers: int = 1,
                  resnet_eps: float = 1e-6,
-                 resnet_time_scale_shift: str = "difault",
+                 resnet_time_scale_shift: str = "default",
                  resnet_act_fn: str = "swish",
                  resnet_groups: int = 32,
                  attn_groups: Optional[int] = None,
