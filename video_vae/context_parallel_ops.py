@@ -29,10 +29,16 @@ class _CPConvolutionPassFromPreviousRank(torch.autograd.Function):
     def forward(ctx, input_, dim, kernel_size):
         ctx.dim = dim
         ctx.kernel_size = kernel_size
+        ## [128, 128, ]
+        # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 3, 19, 256, 256]) * 6
+        # torch.Size([2, 128, 17, 128, 128])  -> torch.Size([2, 128, 19, 128, 128]) * 1
+        # torch.Size([2, 128, 9, 128, 128]) -> torch.Size([2, 128, 11, 128, 128])
+        # ... -> ....
         return _cp_pass_from_previous_rank(input_, dim, kernel_size)
 
     @staticmethod
     def backward(ctx, grad_output):
+        print(f"<--------------------[context_parallel_ops.py] [conv.py] what is the shape of grad_output={grad_output.shape} <------------>")
         return _drop_from_previous_rank(grad_output, ctx.dim, ctx.kernel_size), None, None
 
 
@@ -43,45 +49,58 @@ def _cp_pass_from_previous_rank(input_, dim, kernel_size):
     if kernel_size == 1:
         return input_
 
+    # cp_rank=0, cp_world_size=2
     group = get_context_parallel_group()
     cp_rank = get_context_parallel_rank()
     cp_world_size = get_context_parallel_world_size()
-
-
-
+  
+    # global_rank=0
     global_rank = torch.distributed.get_rank()
 
     ## it uses `.transpose()` to flip the data, moving the "time" dimenaion (the frames)
     ## to the very front. This makes it much easier to slice off the last few frames. 
+    # torch.Size([2, 3, 17, 256, 256]) ->  torch.Size([17, 3, 2, 256, 256])
     input_ = input_.transpose(0, dim)
 
     ## The worker does some quick math to figure out the ID of the person they need to send frames to (`send_rank`)
     ## and the person they need to receive frames from (`recv_rank`)
+    # send_rank=1, recv_rank=-1
     send_rank = global_rank + 1
     recv_rank = global_rank - 1
+    
+    # 1 -> 2 % 2 == 0
     if send_rank % cp_world_size == 0:
-        send_rank -= cp_world_size
+        send_rank -= cp_world_size # 2-2 = -1
+    # -1 % 2 == 2 -1
     if recv_rank % cp_world_size == cp_world_size - 1:
-        recv_rank += cp_world_size
+        recv_rank += cp_world_size # -1 + 2 = 1
+  
 
+    # torch.Size([17, 3, 2, 256, 256])[-3+1=>-2:] -> torch.Size([2, 3, 2, 256, 256])
     recv_buffer = torch.empty_like(input_[-kernel_size + 1 :]).contiguous()
+    
 
     ## This is the mailroom. If the worker is not the last person in line, they mail out their last few frames (`isend`)
     ## if they are not the first person in line. they put out an empty box and wait to receive mail (`irecv`)
-    if cp_rank < cp_world_size - 1:
+    if cp_rank < cp_world_size - 1: # 0 < 2 -1
+        # torch.Size([17, 3, 2, 256, 256])[-3+1=>-2:] -> torch.Size([2, 3, 2, 256, 256])
         req_send = torch.distributed.isend(input_[-kernel_size + 1 :].contiguous(), send_rank, group=group)
-    if cp_rank > 0:
+    if cp_rank > 0: # 0 > 0, 1 > 0
         req_recv = torch.distributed.irecv(recv_buffer, recv_rank, group=group)
 
     ## Time to unpack. If this is the very first worker (`cp_rank==0`), they do not receive mail, so they just tape blank frames (zeros) to the front of their video. Everyone
     ## else waits to their package (`req_recv.wait()`) and glues those received frames to the start of their video.
-    if cp_rank == 0:
+    if cp_rank == 0: # 0 == 0, 1 == 0
+        # torch.Size([17, 3, 2, 256, 256])[:1] -> [torch.Size([1, 3, 2, 256, 256])] * (2) -> [torch.Size([1, 3, 2, 256, 256]), torch.Size([1, 3, 2, 256, 256])] + [torch.Size([17, 3, 2, 256, 256])] -> torch.Size([19, 3, 2, 256, 256])
         input_ = torch.cat([torch.zeros_like(input_[:1])] * (kernel_size - 1) + [input_], dim=0)
-    else:
+
+    else: # 1
         req_recv.wait()
+        # [torch.Size([2, 3, 2, 256, 256]), torch.Size([17, 3, 2, 256, 256])] -> torch.Size([19, 3, 2, 256, 256])
         input_ = torch.cat([recv_buffer, input_], dim=0)
 
     ## The data is flipped back to it's original shape and handed back to the main program.
+    # torch.Size([19, 3, 2, 256, 256]) -> torch.Size([2, 3, 19, 256, 256])
     input_ = input_.transpose(0, dim).contiguous()
     return input_
 

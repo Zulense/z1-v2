@@ -260,9 +260,6 @@ class CausalVaeDecoder(nn.Module):
                     )
                     
 
-       
-
-
         # POST-PROCESS 
         # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         sample = self.conv_norm_out(sample)
@@ -304,53 +301,19 @@ class DiagonalGaussianDistribution(object):
                generator: Optional[torch.Generator] = None) -> torch.FloatTensor:
 
         # make sure sample is on the same device as the parameters and has same dtype 
+        # torch.Size([2, 4, 3, 32, 32])
         sample = randn_tensor(
             self.mean.shape,
             generator=generator,
             device=self.parameters.device,
             dtype=self.parameters.dtype
         )
-        # torch.Size([2, 4, 3, 32, 32]) + torch.Size([2, 4, 3, 32, 32]) * 
+        
+        # torch.Size([2, 4, 3, 32, 32]) + torch.Size([2, 4, 3, 32, 32]) * torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 4, 3, 32, 32])
         x = self.mean + self.std * sample 
         return x 
 
 
-    def kl(self,
-           other: "DiagonalGaussianDistribution" = None) -> torch.Tensor:
-
-        if self.deterministic:
-            return torch.Tensor([0.0])
-
-        else:
-            if other is None:
-                return 0.5 * torch.sum(
-                    torch.pow(self.mean, 2) + self.var - 1.0 - self.logvar,
-                    dim=[2, 3, 4]
-                )
-
-            else:
-                return 0.5 * torch.sum(
-                    torch.pow(self.mean - other.mean, 2) / other.var 
-                    + self.var / other.var 
-                    - 1.0 
-                    - self.logvar
-                    + other.logvar,
-                    dim=[2, 3, 4]
-                )
-
-    def nll(self,
-            sample: torch.Tensor,
-            dims: Tuple[int, ...] = [1, 2, 3]) -> torch.Tensor:
-
-        if self.deterministic:
-            return torch.Tensor([0.0])
-
-        logtwopi = np.log(2.0 * np.pi)
-
-        return 0.5 * torch.sum(
-            logtwopi + self.logvar + torch.pow(sample - self.mean, 2) / self.var,
-            dim=dims
-        )
 
 
     def mode(self) -> torch.Tensor:
