@@ -75,6 +75,7 @@ class LPIPSWithDiscriminator(nn.Module):
         split="train",
         last_layer=None,
     ):
+        print(f"<--------------------> [loss.py] what is the shape of batch_x={inputs.shape}, reconstruct={reconstructions.shape} <----------------->")
         t = reconstructions.shape[2]
         inputs = rearrange(inputs, "b c t h w -> (b t) c h w").contiguous()
         reconstructions = rearrange(reconstructions, "b c t h w -> (b t) c h w").contiguous()
@@ -103,6 +104,7 @@ class LPIPSWithDiscriminator(nn.Module):
                 if self.using_3d_discriminator:
                     reconstructions = rearrange(reconstructions, '(b t) c h w -> b c t h w', t=t)
 
+                print(f"<---------->[loss.py] [LPIPSWithDiscriminator] what is the shape of reconstructions={reconstructions.shape} <--------------->")
                 logits_fake = self.discriminator(reconstructions.contiguous())
                 g_loss = -torch.mean(logits_fake)
                 try:

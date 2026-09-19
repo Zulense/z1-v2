@@ -95,11 +95,25 @@ class VAELossWrapper(nn.Module):
                                           is_init_image=True,
                                           temporal_chunk=False)
 
+        
+
+        # The reconstruct loss 
+        reconstruct_loss, rec_log = self.loss(
+            batch_x,
+            reconstruct,
+            posterior,
+            optimizer_idx=0,
+            global_step=step,
+            last_layer=self.vae.get_last_layer()
+        )
+
+       
+
        
 
 
 
-        return posterior, reconstruct
+        return reconstruct_loss, rec_log
     
 
         

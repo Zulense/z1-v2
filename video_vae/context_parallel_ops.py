@@ -30,10 +30,13 @@ class _CPConvolutionPassFromPreviousRank(torch.autograd.Function):
         ctx.dim = dim
         ctx.kernel_size = kernel_size
         ## [128, 128, ]
-        # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 3, 19, 256, 256]) * 6
-        # torch.Size([2, 128, 17, 128, 128])  -> torch.Size([2, 128, 19, 128, 128]) * 1
-        # torch.Size([2, 128, 9, 128, 128]) -> torch.Size([2, 128, 11, 128, 128])
-        # ... -> ....
+        # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 3, 19, 256, 256])
+        # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 19, 256, 256]) * 6
+        # torch.Size([2, 128, 9, 128, 128]) -> torch.Size([2, 128, 19, 128, 128])
+        # torch.Size([2, 256, 9, 128, 128]) -> torch.Size([2, 128, 11, 128, 128])
+        # torch.Size([2, 256, 9, 128, 128]) -> torch.Size([2, 256, 11, 128, 128]) * 4
+        # -----
+        
         return _cp_pass_from_previous_rank(input_, dim, kernel_size)
 
     @staticmethod
@@ -56,6 +59,8 @@ def _cp_pass_from_previous_rank(input_, dim, kernel_size):
   
     # global_rank=0
     global_rank = torch.distributed.get_rank()
+
+    print(f"<------------------------> [context_parall_ops.py] [_cp_pass_from_previous_rank] ------------------------> {input_.shape} <---------------------------->")
 
     ## it uses `.transpose()` to flip the data, moving the "time" dimenaion (the frames)
     ## to the very front. This makes it much easier to slice off the last few frames. 
