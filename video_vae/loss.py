@@ -81,6 +81,8 @@ class LPIPSWithDiscriminator(nn.Module):
         reconstructions = rearrange(reconstructions, "b c t h w -> (b t) c h w").contiguous()
     
         if optimizer_idx == 0:
+            # torch.Size([34, 3, 256, 256]), torch.Size([34, 3, 256, 256]) rank=0
+            # torch.Size([32, 3, 256, 256]), torch.Size([18, 3, 256, 256]) rank=1
             # rec_loss = torch.mean(torch.abs(inputs - reconstructions), dim=(1,2,3), keepdim=True)
             rec_loss = torch.mean(F.mse_loss(inputs, reconstructions, reduction='none'), dim=(1,2,3), keepdim=True)
 
@@ -105,6 +107,7 @@ class LPIPSWithDiscriminator(nn.Module):
                     reconstructions = rearrange(reconstructions, '(b t) c h w -> b c t h w', t=t)
 
                 print(f"<---------->[loss.py] [LPIPSWithDiscriminator] what is the shape of reconstructions={reconstructions.shape} <--------------->")
+                # torch.Size([2, 3, 17, 256, 256])
                 logits_fake = self.discriminator(reconstructions.contiguous())
                 g_loss = -torch.mean(logits_fake)
                 try:

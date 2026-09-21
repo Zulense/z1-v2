@@ -16,7 +16,10 @@ from .context_parallel_ops import conv_scatter_to_context_parallel_region
 
 from .loss import LPIPSWithDiscriminator
 
-
+import sys 
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from context_parallel import get_context_parallel_rank
 
 
 class VAELossWrapper(nn.Module):
@@ -62,7 +65,7 @@ class VAELossWrapper(nn.Module):
                                                perceptual_weight=perceptual_weight,
                                                disc_weight=disc_weight,
                                                add_discriminator=add_discriminator,
-                                               using_3d_discriminator=False,
+                                               using_3d_discriminator=True,
                                                disc_num_layers=4,
                                                lpips_ckpt=lpips_ckpt)
             
@@ -71,6 +74,8 @@ class VAELossWrapper(nn.Module):
 
 
     def forward(self, x, step, identifier=['video']):
+
+        cp_rank = get_context_parallel_rank()
 
         if 'video' in identifier:
             print("video are found.")
@@ -95,8 +100,13 @@ class VAELossWrapper(nn.Module):
                                           is_init_image=True,
                                           temporal_chunk=False)
 
+        with open(f"vae_testing_rank_{cp_rank}.txt", "a") as f:
+            f.write(f"Hello from Rank {cp_rank}! batch_x=>{batch_x.shape}, and reconstruct=>{reconstruct.shape}\n")
+                
+
         
 
+        # torch.Size([2, 3, 16, 256, 256]), torch.Size([2, 3, 9, 256, 256])~torch.Size([2, 3, 16, 256, 256])
         # The reconstruct loss 
         reconstruct_loss, rec_log = self.loss(
             batch_x,

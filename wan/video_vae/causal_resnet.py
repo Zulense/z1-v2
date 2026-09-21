@@ -66,13 +66,36 @@ class Resample(nn.Module):
 
         B, C, T, H, W = x.size()
 
+
         if self.mode == 'downsample3d':
             if feat_cache is not None:
                 idx = feat_idx[0]
-                if feat_idx[idx] is None:
-                    feat_idx[idx] = "Rep"
+                if feat_cache[idx] is None:
+                    feat_cache[idx] = x.clone()
+                    feat_idx[0] += 1
+
+                else:
+                    cache_x = x[:, :, -1:, :, :].clone()
+                    x = self.time_conv(
+                        torch.cat([feat_cache[idx][:, :, -1:, :, :], x], dim=2)
+                    )
+                    feat_cache[idx] = cache_x
+                    feat_idx[0] += 1
+
+
+        if self.mode == 'upsample3d':
+
+            
+            if feat_cache is not None:
+                # If we are shrinking the video and using memory caching (Processing a long video in chunks),
+                # We figure out which layer's memory we are currently looking at (`idx`)
+                idx = feat_idx[0]
+                if feat_cache[idx] is None:
+                    feat_cache[idx] = 'Rep'
                     feat_idx[0] += 1
                 else:
+                    # Because the video is processed in chunks, the model needs to remember how this chunk ends so the next chunk connects smooothly.
+                    # This line grabs the very fast few frames (`-CACHE_T:`) of the current video chunk and saves a `.clone()` of them for later.
                     cache_x = x[:, :, -CACHE_T:, :, :].clone()
                     if cache_x.shape[2] < 2 and feat_cache[
                             idx] is not None and feat_cache[idx] != 'Rep':
@@ -107,5 +130,9 @@ class Resample(nn.Module):
         x = self.resample(x)
         x = rearrange(x, 
                       '(b t) c h w -> b c t h w', t=t)
+
+        return x
+
+        
 
 

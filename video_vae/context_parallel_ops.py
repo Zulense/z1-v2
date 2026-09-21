@@ -168,8 +168,8 @@ def _conv_gather(input_, dim=2, kernel_size=1):
     # Worker 1 (else) has the middle/end of the movie.
     # Since Worker 0 already has the beginning of the movie perfectly sorted out, Worker 1's only job is to cut off the duplicate photocopied frames at the start of their chunk so it attaches perfectly to Worker 0's piece.
     else:
-        # input_ = input_.transpose(0, dim)[max(kernel_size - 1, 0) :].transpose(0, dim).contiguous()
-        assert("<-----------------[context_parallel_ops.py] [_conv_gather] i want to know that `Rank=1` is working or not. ----------------->")
+        input_ = input_.transpose(0, dim)[max(kernel_size - 1, 0) :].transpose(0, dim).contiguous()
+        # assert("<-----------------[context_parallel_ops.py] [_conv_gather] i want to know that `Rank=1` is working or not. ----------------->")
 
     ## Rank 0 creates a list of two empty containers. It knows it needs one container for itself, and one container to catch the incoming data from GPU 1.
     # torch.Size([2, 8, 3, 32, 32]) + torch.Size([2, 8, 2, 32, 32]) -> [torch.Size([2, 8, 3, 32, 32]), torch.Size([2, 8, 2, 32, 32])]
@@ -197,8 +197,8 @@ def _conv_gather(input_, dim=2, kernel_size=1):
     output = torch.cat(tensor_list, dim=dim).contiguous()
 
     # Let each GPU write its own little diary entry to a text file
-    # with open(f"gpu_log_rank_{cp_rank}.txt", "a") as f:
-    #     f.write(f"Hello from Rank {cp_rank}! My input was: {input_.shape}, and my output is: {output.shape}\n")
+    with open(f"gpu_log_rank_{cp_rank}.txt", "a") as f:
+        f.write(f"Hello from Rank {cp_rank}! My input was: {input_.shape}, and my output is: {output.shape}\n")
         
     # print('out _conv_gather, cp_rank:', cp_rank, 'input_size:', output.shape) -> cp_rank: 0 input_size: torch.Size([2, 8, 5, 32, 32])
     return output
@@ -231,10 +231,10 @@ def _conv_split(input_, dim=2, kernel_size=1):
         # the tensor so the dimension we want to cut is at the very front, making the slicing math much easier to write.
 
         # output = input_.transpose(dim, 0)[cp_rank * dim_size + 1:(cp_rank + 1) * dim_size + kernel_size].transpose(dim, 0)
-        # output = input_.transpose(dim, 0)[
-        #     cp_rank * dim_size + kernel_size : (cp_rank + 1) * dim_size + kernel_size
-        # ].transpose(dim, 0)
-        assert("<-----------------[context_parallel_ops.py] [_conv_split] i want to know that `Rank=1` is working or not. ----------------->")
+        output = input_.transpose(dim, 0)[
+            cp_rank * dim_size + kernel_size : (cp_rank + 1) * dim_size + kernel_size
+        ].transpose(dim, 0)
+        # assert("<-----------------[context_parallel_ops.py] [_conv_split] i want to know that `Rank=1` is working or not. ----------------->")
 
 
     output = output.contiguous()
