@@ -119,6 +119,7 @@ class CausalVaeEncoder(nn.Module):
                 # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
                 sample = checkpoint(create_custom_forward(self.mid_block),
                                     sample,
+                                    None,
                                     is_init_image=is_init_image,
                                     temporal_chunk=temporal_chunk,
                                     use_reentrant=False)
@@ -244,6 +245,7 @@ class CausalVaeDecoder(nn.Module):
                 # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
                 sample = checkpoint(create_custom_function(self.mid_block),
                                     sample,
+                                    None,
                                     is_init_image,
                                     temporal_chunk,
                                     use_reentrant=False)
@@ -254,6 +256,7 @@ class CausalVaeDecoder(nn.Module):
                     sample = checkpoint(
                         create_custom_function(up_block),
                         sample,
+                        None,
                         is_init_image,
                         temporal_chunk,
                         use_reentrant=False

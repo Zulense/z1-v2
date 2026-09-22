@@ -288,10 +288,12 @@ class CausalTemporalUpsample2x(nn.Module):
                                   is_init_image=is_init_image,
                                   temporal_chunk=temporal_chunk)
         hidden_states = rearrange(hidden_states,
-                                  'b (c p) t h w -> b c (t p) h w', p=2)
+                                  'b (c p) t h w -> b c (t p) h w', p=2, t=t)
 
-        # [:, :, [2T - 1]]
-        hidden_states = hidden_states[:, :, 1:]
+        
+        if is_init_image:
+            # [:, :, [2T - 1]]
+            hidden_states = hidden_states[:, :, 1:]
 
         return hidden_states
     

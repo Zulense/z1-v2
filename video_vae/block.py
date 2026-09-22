@@ -167,7 +167,7 @@ class DownEncoderBlockCausal3D(nn.Module):
 
         if self.temporal_downsamplers is not None:
             # torch.Size([2, 128, 9, 128, 128]) -> torch.Size([2, 256, 5, 64, 64]) -> torch.Size([2, 512, 3, 32, 32]) >> RANK=0
-            # torch.Size([2, 128, 8, 128, 128]) -> torch.Size([2, 256, 4, 64, 64]) -> torch.Size([2, 512, 2, 32, 32]) >> RANK=1
+            # torch.Size([2, 128, 4, 128, 128]) -> torch.Size([2, 256, 8, 64, 64]) -> torch.Size([2, 512, 2, 32, 32]) >> RANK=1
             for temporal_downsampler in self.temporal_downsamplers:
                 hidden_states = temporal_downsampler(hidden_states,
                                                      is_init_image=is_init_image,
@@ -370,11 +370,11 @@ class UpDecoderBlockCausal3D(nn.Module):
 
         if self.temporal_upsamplers is not None:
             # torch.Size([2, 512, 5, 64, 64]) -> torch.Size([2, 512, 9, 128, 128]) -> torch.Size([2, 256, 17, 256, 256]) Rank=0
-            # torch.Size([2, 512, 3, 64, 64]) -> torch.Size([2, 512, 5, 128, 128]) -> torch.Size([2, 256, 9, 256, 256]) Rank=1
+            # torch.Size([2, 512, 4, 64, 64]) -> torch.Size([2, 512, 8, 128, 128]) -> torch.Size([2, 256, 16, 256, 256]) Rank=1
             for temporal_upsampler in self.temporal_upsamplers:
                 hidden_states = temporal_upsampler(hidden_states,
-                                                         is_init_image=is_init_image,
-                                                         temporal_chunk=temporal_chunk)
+                                                    is_init_image=is_init_image,
+                                                    temporal_chunk=temporal_chunk)
 
         return hidden_states
 

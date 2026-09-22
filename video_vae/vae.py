@@ -167,9 +167,9 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
 
             else:
                 # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 8, 3, 32, 32])
-                h = self.encoder(x, is_init_image=True, temporal_chunk=False)
+                h = self.encoder(x, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
                 # torch.Size([2, 8, 3, 32, 32]) -> torch.Size([2, 8, 3, 32, 32])
-                moments = self.quant_conv(h, is_init_image=True, temporal_chunk=False)
+                moments = self.quant_conv(h, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
                 # torch.Size([2, 8, 3, 32, 32]) -> DiagonalGaussianDistribution=<video_vae.enc_dec.DiagonalGaussianDistribution object at 0x7fa063b514b0>
                 posterior = DiagonalGaussianDistribution(moments)
 
