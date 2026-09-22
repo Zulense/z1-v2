@@ -154,7 +154,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                 generator: Optional[torch.Generator] = None,
                 freeze_encoder: bool = False,
                 is_init_image = True,
-                temporal_chunk = False) -> Union[DecoderOutput, torch.FloatTensor]:
+                temporal_chunk = True) -> Union[DecoderOutput, torch.FloatTensor]:
 
         x = sample 
         if is_context_parallel_initialized():
@@ -185,10 +185,10 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                 z = posterior.mode()
 
             if get_context_parallel_rank() == 0:
-                dec = self.decode(z, is_init_image=True).sample
+                dec = self.decode(z, is_init_image=True, temporal_chunk=temporal_chunk).sample
             else:
                 # Do not drop the first upsampled frame 
-                dec = self.decode(z, is_init_image=False).sample
+                dec = self.decode(z, is_init_image=False, temporal_chunk=temporal_chunk).sample
             # z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
             # dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
 
@@ -199,7 +199,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
     def decode(self, 
                z: torch.FloatTensor,
                is_init_image=True,
-               temporal_chunk=False,
+               temporal_chunk=True,
                return_dict: bool = True,
                window_size: int = 2,
                tile_sample_min_size: int = 256) -> Union[DecoderOutput, torch.FloatTensor]:
@@ -215,9 +215,8 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             return self.tiled_decode()
 
         if temporal_chunk:
-            assert ValueError
-            # dec = self.chunk_decode(z, window_size=window_size)
-            logger.warning("Temporal Chunk is Enable But Funcation does not Execute...")
+            dec = self.chunk_decode(z, window_size=window_size)
+            
         else:
             # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 4, 3, 32, 32])
             z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
@@ -238,6 +237,40 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
         """
 
         pass 
+
+    def chunk_decode(self, 
+                     z: torch.FloatTensor,
+                     window_size=2):
+
+        num_frames = z.shape[2]
+        init_window_size = window_size + 1 
+        frame_list = [z[:, :, :init_window_size]]
+
+        # To chunk the long video 
+        full_chunk_size = (num_frames - init_window_size) // window_size
+        fid = init_window_size
+        for idx in range(full_chunk_size):
+            frame_list.append(z[:, :, fid:fid+window_size])
+            fid += window_size
+
+        if fid < num_frames:
+            frame_list.append(z[:, :, fid:])
+
+        dec_list = []
+        for idx, frames in enumerate(frame_list):
+            if idx == 0:
+                z_h = self.post_quant_conv(frames, is_init_image=True, temporal_chunk=True)
+                dec = self.decoder(z_h, is_init_image=True, temporal_chunk=True)
+            else:
+                z_h = self.post_quant_conv(frames, is_init_image=False, temporal_chunk=True)
+                dec = self.decoder(z_h, is_init_image=False, temporal_chunk=True)
+
+            dec_list.append(dec)
+
+        dec = torch.cat(dec_list, dim=2)
+        return dec
+    
+
 
         
 

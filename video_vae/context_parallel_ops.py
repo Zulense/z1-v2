@@ -41,7 +41,7 @@ class _CPConvolutionPassFromPreviousRank(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-        print(f"<--------------------[context_parallel_ops.py] [conv.py] what is the shape of grad_output={grad_output.shape} <------------>")
+        # print(f"<--------------------[context_parallel_ops.py] [conv.py] what is the shape of grad_output={grad_output.shape} <------------>")
         return _drop_from_previous_rank(grad_output, ctx.dim, ctx.kernel_size), None, None
 
 
@@ -60,7 +60,7 @@ def _cp_pass_from_previous_rank(input_, dim, kernel_size):
     # global_rank=0
     global_rank = torch.distributed.get_rank()
 
-    print(f"<------------------------> [context_parall_ops.py] [_cp_pass_from_previous_rank] ------------------------> {input_.shape} <---------------------------->")
+    # print(f"<------------------------> [context_parall_ops.py] [_cp_pass_from_previous_rank] ------------------------> {input_.shape} <---------------------------->")
 
     ## it uses `.transpose()` to flip the data, moving the "time" dimenaion (the frames)
     ## to the very front. This makes it much easier to slice off the last few frames. 

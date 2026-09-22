@@ -316,6 +316,26 @@ class DiagonalGaussianDistribution(object):
         x = self.mean + self.std * sample 
         return x 
 
+    def kl(self, other: "DiagonalGaussianDistribution" = None) -> torch.Tensor:
+        if self.deterministic:
+            return torch.Tensor([0.0])
+        else:
+            if other is None:
+                print(f"<--------------- [enc_dec.py] [DiagonalGaussianDistribution] {0.5 * torch.sum(torch.pow(self.mean, 2) + self.var - 1.0 - self.logvar, dim=[2, 3, 4]).shape} ----------------------->")
+                return 0.5 * torch.sum(
+                    torch.pow(self.mean, 2) + self.var - 1.0 - self.logvar,
+                    dim=[2, 3, 4],
+                )
+            else:
+                return 0.5 * torch.sum(
+                    torch.pow(self.mean - other.mean, 2) / other.var
+                    + self.var / other.var
+                    - 1.0
+                    - self.logvar
+                    + other.logvar,
+                    dim=[2, 3, 4],
+                )
+
 
 
 

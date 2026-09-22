@@ -142,24 +142,18 @@ class CausalConv3d(nn.Module):
                                         pad=self.time_causal_padding,
                                         mode=pad_mode)
 
-
+        
         else:
-            assert not self.training, "The feature cache should not be used in training."
-
-
+            # assert not self.training, "The feature cache should not be used in training."
             if is_init_image:
                 # Encode the first chunk.
                 x = torch.nn.functional.pad(x, self.time_causal_padding, mode=pad_mode)
                 ## <-- context_parallel --> ##
                 self._clear_context_parallel_cache()
-                
-
                 # take the very last 2 frames of the chunk, detach them from the computation graph and store them in the cache.
                 self.cache_front_feat.append(x[:, :, -2:].clone().detach())
 
-
             else:
-
                 x = torch.nn.functional.pad(input=x,
                                             pad=self.time_uncausal_padding,
                                             mode=pad_mode)
