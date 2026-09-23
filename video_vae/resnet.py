@@ -103,7 +103,7 @@ class CausalResnetBlock3D(nn.Module):
                 input_tensor: torch.FloatTensor,
                 temb: torch.FloatTensor = None,
                 is_init_image=True,
-                temporal_chunk=False) -> torch.FloatTensor:
+                temporal_chunk=True) -> torch.FloatTensor:
 
         hidden_states = input_tensor
 
@@ -172,7 +172,7 @@ class CausalDownsample2x(nn.Module):
     def forward(self, 
                 hidden_states: torch.FloatTensor,
                 is_init_image=True,
-                temporal_chunk=False) -> torch.FloatTensor:
+                temporal_chunk=True) -> torch.FloatTensor:
 
         assert hidden_states.shape[1] == self.channels, "make sure channels match `hidden_state`"
         hidden_states = self.conv(hidden_states,
@@ -207,7 +207,7 @@ class CausalTemporalDownSample2x(nn.Module):
     def forward(self, 
                 hidden_states: torch.FloatTensor,
                 is_init_image = True,
-                temporal_chunk = False) -> torch.FloatTensor:
+                temporal_chunk = True) -> torch.FloatTensor:
 
         assert hidden_states.shape[1] == self.channels
         hidden_states = self.conv(hidden_states, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
@@ -245,7 +245,7 @@ class CausalUpsample2x(nn.Module):
     def forward(self, 
                 hidden_states: torch.FloatTensor,
                 is_init_image=True,
-                temporal_chunk=False) -> torch.FloatTensor:
+                temporal_chunk=True) -> torch.FloatTensor:
 
         assert hidden_states.shape[1] == self.channels
         hidden_states = self.conv(hidden_states,
@@ -280,7 +280,7 @@ class CausalTemporalUpsample2x(nn.Module):
     def forward(self,
                 hidden_states: torch.FloatTensor,
                 is_init_image=True,
-                temporal_chunk=False) -> torch.FloatTensor:
+                temporal_chunk=True) -> torch.FloatTensor:
 
         assert hidden_states.shape[1] == self.channels
         t = hidden_states.shape[2]

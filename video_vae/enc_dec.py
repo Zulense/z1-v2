@@ -90,7 +90,7 @@ class CausalVaeEncoder(nn.Module):
     def forward(self,
                 sample: torch.FloatTensor,
                 is_init_image=True,
-                temporal_chunk=False) -> torch.FloatTensor:
+                temporal_chunk=True) -> torch.FloatTensor:
 
         # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         sample = self.conv_in(sample,
@@ -224,7 +224,7 @@ class CausalVaeDecoder(nn.Module):
     def forward(self,
                 sample: torch.FloatTensor,
                 is_init_image=True,
-                temporal_chunk=False,
+                temporal_chunk=True,
                 ) -> torch.FloatTensor:
 
         # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])

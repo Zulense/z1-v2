@@ -14,74 +14,6 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from context_parallel import get_context_parallel_rank
 
 
-def get_input_layer(
-        in_channels: int,
-        out_channels: int,
-        norm_num_groups: int,
-        layer_type: str,
-        norm_type: str = "group",
-        affine: bool = True
-):
-
-    if layer_type == 'conv':
-        input_layer = nn.Conv3d(
-            in_channels=in_channels,
-            out_channels=out_channels,
-            kernel_size=3,
-            stride=1,
-            padding=1
-        )
-
-    elif layer_type == "pixel_shuffle":
-        input_layer = nn.Sequential(
-            nn.PixelUnshuffle(2),
-            nn.Conv2d(in_channels=in_channels * 4,
-                      out_channels=out_channels,
-                      kernel_size=1)
-        )
-
-    else:
-        raise NotImplementedError(f"Not support input layer {layer_type}")
-
-    return input_layer
-
-
-def get_output_layer(in_channels: int,
-                     out_channels: int,
-                     norm_num_groups: int,
-                     layer_type: str,
-                     affine: bool = True):
-
-    if layer_type == 'norm_act_conv':
-        output_layer = nn.Sequential(
-            nn.GroupNorm(num_groups=norm_num_groups,
-                         num_channels=in_channels,
-                         eps=1e-6,
-                         affine=affine),
-            nn.SiLU(),
-            nn.Conv3d(in_channels=in_channels,
-                      out_channels=out_channels,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1)
-        )
-
-    elif layer_type == "pixel_shuffle":
-        output_layer = nn.Sequential(
-            nn.Conv2d(in_channels=in_channels,
-                      out_channels=out_channels * 4,
-                      kernel_size=1),
-            nn.PixelShuffle(2)
-        )
-
-    else:
-        raise NotImplementedError(F"Not Support output layer {layer_type}")
-
-    return output_layer
-
-
-
-
 
 class DownEncoderBlockCausal3D(nn.Module):
 
@@ -143,7 +75,7 @@ class DownEncoderBlockCausal3D(nn.Module):
     def forward(self,
                 hidden_states: torch.FloatTensor,
                 is_init_image=True,
-                temporal_chunk = False) -> torch.FloatTensor:
+                temporal_chunk = True) -> torch.FloatTensor:
 
         cp_rank = get_context_parallel_rank()
 
@@ -267,7 +199,7 @@ class MidBlockCausal3D(nn.Module):
                 hidden_states: torch.FloatTensor,
                 temb: Optional[torch.FloatTensor] = None,
                 is_init_image = True,
-                temporal_chunk = False) -> torch.FloatTensor:
+                temporal_chunk = True) -> torch.FloatTensor:
 
         hidden_states = self.resnets[0](hidden_states, temb, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
         t = hidden_states.shape[2]
@@ -352,7 +284,7 @@ class UpDecoderBlockCausal3D(nn.Module):
                 hidden_states: torch.FloatTensor,
                 temb: Optional[torch.FloatTensor] = None,
                 is_init_image = True,
-                temporal_chunk = False) -> torch.FloatTensor:
+                temporal_chunk = True) -> torch.FloatTensor:
 
         for resnet in self.resnets:
             hidden_states = resnet(hidden_states,

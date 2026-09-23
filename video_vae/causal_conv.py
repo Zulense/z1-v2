@@ -124,7 +124,7 @@ class CausalConv3d(nn.Module):
     def forward(self, 
                 x, 
                 is_init_image=True,
-                temporal_chunk=False):
+                temporal_chunk=True):
 
         if is_context_parallel_initialized():
             return self.context_parallel_forward(x)
