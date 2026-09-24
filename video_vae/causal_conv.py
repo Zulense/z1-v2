@@ -37,7 +37,7 @@ class CausalConv3d(nn.Module):
             kernel_size = 3 * (kernel_size,)
 
         time_kernel_size, height_kernel_size, width_kernel_size = kernel_size
-        self.time_kernel_size = time_kernel_size
+        self.time_kernel_size = time_kernel_size    
         assert is_odd(height_kernel_size) and is_odd(width_kernel_size), "make sure `height_kernel_size` and `width_kernel_size` is odd number"
 
         dilation = kwargs.pop('dilation', 1)
@@ -50,7 +50,7 @@ class CausalConv3d(nn.Module):
         height_pad = height_kernel_size // 2 
         width_pad = width_kernel_size // 2 
 
-        self.temporal_stride = stride[0]
+        self.temporal_stride = stride[0]    # 1
         self.time_pad = time_pad
         self.time_causal_padding = (width_pad, width_pad, height_pad, height_pad, time_pad, 0)
         self.time_uncausal_padding = (width_pad, width_pad, height_pad, height_pad, 0, 0)
@@ -126,8 +126,10 @@ class CausalConv3d(nn.Module):
                 is_init_image=True,
                 temporal_chunk=True):
 
-        if is_context_parallel_initialized():
-            return self.context_parallel_forward(x)
+        cp_rank = get_context_parallel_rank()
+
+        # if is_context_parallel_initialized():
+        x = self.context_parallel_forward(x)
 
 
         if self.time_pad < x.shape[2]:
@@ -137,40 +139,48 @@ class CausalConv3d(nn.Module):
             pad_mode = 'constant'
 
 
-        if not temporal_chunk:
-            x = torch.nn.functional.pad(input=x,
-                                        pad=self.time_causal_padding,
-                                        mode=pad_mode)
+        if temporal_chunk:
+            if is_init_image: # RANK=0
 
-        
-        else:
-            # assert not self.training, "The feature cache should not be used in training."
-            if is_init_image:
+                # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 19, 256, 256])
                 # Encode the first chunk.
                 x = torch.nn.functional.pad(x, self.time_causal_padding, mode=pad_mode)
+                
+
                 ## <-- context_parallel --> ##
                 self._clear_context_parallel_cache()
-                # take the very last 2 frames of the chunk, detach them from the computation graph and store them in the cache.
+
+                # torch.Size([2, 128, 19, 256, 256]) -> torch.Size([2, 128, 2, 256, 256])
+                # take the very last 2 frames in video
                 self.cache_front_feat.append(x[:, :, -2:].clone().detach())
 
-            else:
+            else: # RANK=1
+                # torch.Size([2, 128, 16, 256, 256]) -> torch.Size([2, 128, 18, 256, 256])
                 x = torch.nn.functional.pad(input=x,
                                             pad=self.time_uncausal_padding,
                                             mode=pad_mode)
+                
+
+                # torch.Size([2, 128, 2, 256, 256])
                 video_front_context = self.cache_front_feat.pop()
-               # # <-- context_parallel --> ##
+
+                # # <-- context_parallel --> ##
                 self._clear_context_parallel_cache()
 
                 # connect the next frame with padding.
                 if self.temporal_stride == 1 and self.time_kernel_size == 3:
+                    # torch.Size([2, 128, 2, 256, 256]), torch.Size([2, 128, 18, 256, 256]) -> torch.Size([2, 128, 20, 256, 256])
                     x = torch.cat([video_front_context, x], dim=2)
                 elif self.temporal_stride == 2 and self.time_kernel_size == 3:
                     x = torch.cat([video_front_context[:, :, -1:], x], dim=2)
 
+                # torch.Size([2, 128, 20, 256, 256]) -> torch.Size([2, 128, 2, 256, 256])
                 self.cache_front_feat.append(x[:, :, -2:].clone().detach())
 
-            
+        # torch.Size([2, 128, 19, 258, 258]) RANK=0
+        # torch.Size([2, 128, 18, 258, 258]) RANK=1
         x = self.conv(x)
+        
         return x 
 
 

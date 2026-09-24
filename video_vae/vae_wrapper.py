@@ -98,10 +98,10 @@ class VAELossWrapper(nn.Module):
 
         posterior, reconstruct = self.vae(batch_x,
                                           is_init_image=True,
-                                          temporal_chunk=False)
+                                          temporal_chunk=True)
 
-        with open(f"vae_testing_rank_{cp_rank}.txt", "a") as f:
-            f.write(f"Hello from Rank {cp_rank}! batch_x=>{batch_x.shape}, and reconstruct=>{reconstruct.shape}\n")
+        # with open(f"vae_testing_rank_{cp_rank}.txt", "a") as f:
+            # f.write(f"Hello from Rank {cp_rank}! batch_x=>{batch_x.shape}, and reconstruct=>{reconstruct.shape}\n")
                 
 
         

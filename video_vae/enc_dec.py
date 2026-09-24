@@ -12,6 +12,11 @@ from .causal_conv import CausalConv3d, CausalGroupNorm
 from .block import DownEncoderBlockCausal3D, MidBlockCausal3D, UpDecoderBlockCausal3D
 
 
+import sys 
+from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from context_parallel import get_context_parallel_rank
+
 class CausalVaeEncoder(nn.Module):
 
     def __init__(self,
@@ -227,6 +232,8 @@ class CausalVaeDecoder(nn.Module):
                 temporal_chunk=True,
                 ) -> torch.FloatTensor:
 
+        cp_rank = get_context_parallel_rank()
+
         # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 512, 3, 32, 32])
         sample = self.conv_in(sample,
                               is_init_image,
@@ -252,6 +259,9 @@ class CausalVaeDecoder(nn.Module):
                 sample = sample.to(upscale_dtype)
                 
                 for up_block in self.up_blocks:
+                    # with open(f"enc_dec_file_is_init_image_cp_rank_{cp_rank}.txt", "a") as f:
+                    #     f.write(f"<--------------- [enc_dec.py] Just know that is_init_image={is_init_image} ---------------->\n")
+
                     # torch.Size([2, 512, 3, 32, 32]) -> torch.Size([2, 512, 5, 64, 64]), torch.Size([2, 512, 9, 128, 128]), torch.Size([2, 256, 17, 256, 256]), torch.Size([2, 128, 17, 256, 256])
                     sample = checkpoint(
                         create_custom_function(up_block),
@@ -321,7 +331,7 @@ class DiagonalGaussianDistribution(object):
             return torch.Tensor([0.0])
         else:
             if other is None:
-                print(f"<--------------- [enc_dec.py] [DiagonalGaussianDistribution] {0.5 * torch.sum(torch.pow(self.mean, 2) + self.var - 1.0 - self.logvar, dim=[2, 3, 4]).shape} ----------------------->")
+                # print(f"<--------------- [enc_dec.py] [DiagonalGaussianDistribution] {0.5 * torch.sum(torch.pow(self.mean, 2) + self.var - 1.0 - self.logvar, dim=[2, 3, 4]).shape} ----------------------->")
                 return 0.5 * torch.sum(
                     torch.pow(self.mean, 2) + self.var - 1.0 - self.logvar,
                     dim=[2, 3, 4],

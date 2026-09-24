@@ -94,8 +94,8 @@ class DownEncoderBlockCausal3D(nn.Module):
                 hidden_states = downsampler(hidden_states,
                                             is_init_image=is_init_image,
                                             temporal_chunk=temporal_chunk)
-                with open(f"Downsample_rank_{cp_rank}.txt", "a") as f:
-                    f.write(f"Hello from Rank {cp_rank}! [Downsample] hidden_states=>{hidden_states.shape}\n")
+                # with open(f"Downsample_rank_{cp_rank}.txt", "a") as f:
+                #     f.write(f"Hello from Rank {cp_rank}! [Downsample] hidden_states=>{hidden_states.shape}\n")
 
         if self.temporal_downsamplers is not None:
             # torch.Size([2, 128, 9, 128, 128]) -> torch.Size([2, 256, 5, 64, 64]) -> torch.Size([2, 512, 3, 32, 32]) >> RANK=0
@@ -104,8 +104,8 @@ class DownEncoderBlockCausal3D(nn.Module):
                 hidden_states = temporal_downsampler(hidden_states,
                                                      is_init_image=is_init_image,
                                                      temporal_chunk=temporal_chunk)
-                with open(f"temporal_downsample_rank_{cp_rank}.txt", "a") as f:
-                    f.write(f"Hello from Rank {cp_rank}! [Temporal Downsample] hidden_states=>{hidden_states.shape}\n")
+                # with open(f"temporal_downsample_rank_{cp_rank}.txt", "a") as f:
+                #     f.write(f"Hello from Rank {cp_rank}! [Temporal Downsample] hidden_states=>{hidden_states.shape}\n")
 
         return hidden_states
 

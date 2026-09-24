@@ -215,12 +215,12 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
             return self.tiled_decode()
 
         if temporal_chunk:
-            dec = self.chunk_decode(z, window_size=window_size)
+            dec = self.chunk_decode(z, window_size=window_size, is_init_image=is_init_image)
             
-        else:
-            # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 4, 3, 32, 32])
-            z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
-            dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
+        # else:
+        #     # torch.Size([2, 4, 3, 32, 32]) -> torch.Size([2, 4, 3, 32, 32])
+        #     z = self.post_quant_conv(z, is_init_image=is_init_image, temporal_chunk=False)
+        #     dec = self.decoder(z, is_init_image=is_init_image, temporal_chunk=False)
 
 
         if not return_dict:
@@ -240,7 +240,8 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
 
     def chunk_decode(self, 
                      z: torch.FloatTensor,
-                     window_size=2):
+                     window_size=2,
+                     is_init_image=True):
 
         num_frames = z.shape[2]
         init_window_size = window_size + 1 
@@ -259,11 +260,11 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
         dec_list = []
         for idx, frames in enumerate(frame_list):
             if idx == 0:
-                z_h = self.post_quant_conv(frames, is_init_image=True, temporal_chunk=True)
-                dec = self.decoder(z_h, is_init_image=True, temporal_chunk=True)
+                z_h = self.post_quant_conv(frames, is_init_image=is_init_image, temporal_chunk=True)
+                dec = self.decoder(z_h, is_init_image=is_init_image, temporal_chunk=True)
             else:
-                z_h = self.post_quant_conv(frames, is_init_image=False, temporal_chunk=True)
-                dec = self.decoder(z_h, is_init_image=False, temporal_chunk=True)
+                z_h = self.post_quant_conv(frames, is_init_image=is_init_image, temporal_chunk=True)
+                dec = self.decoder(z_h, is_init_image=is_init_image, temporal_chunk=True)
 
             dec_list.append(dec)
 
