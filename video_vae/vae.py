@@ -166,6 +166,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
                 "because `learnable parameters` are off and decoder are biased data take.")
 
             else:
+                # print(f"<----------- I want to know the shape of self.encoder.conv_in.conv.weight={self.encoder.conv_in.conv.weight.shape} ---------------->")
                 # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 8, 3, 32, 32])
                 h = self.encoder(x, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
                 # torch.Size([2, 8, 3, 32, 32]) -> torch.Size([2, 8, 3, 32, 32])

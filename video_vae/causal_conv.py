@@ -128,8 +128,8 @@ class CausalConv3d(nn.Module):
 
         cp_rank = get_context_parallel_rank()
 
-        # if is_context_parallel_initialized():
-        x = self.context_parallel_forward(x)
+        if is_context_parallel_initialized():
+            x = self.context_parallel_forward(x)
 
 
         if self.time_pad < x.shape[2]:
@@ -177,8 +177,8 @@ class CausalConv3d(nn.Module):
                 # torch.Size([2, 128, 20, 256, 256]) -> torch.Size([2, 128, 2, 256, 256])
                 self.cache_front_feat.append(x[:, :, -2:].clone().detach())
 
-        # torch.Size([2, 128, 19, 258, 258]) RANK=0
-        # torch.Size([2, 128, 18, 258, 258]) RANK=1
+        # torch.Size([2, 128, 19, 258, 258]) RANK=0,  self.conv.weight=torch.Size([128, 3, 3, 3, 3])
+        # torch.Size([2, 128, 18, 258, 258]) RANK=1,
         x = self.conv(x)
         
         return x 
