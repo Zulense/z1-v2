@@ -11,7 +11,7 @@ import time
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from context_parallel import init_distributed_mode, initialize_context_parallel, get_rank, get_world_size
-from video_vae.vae_wrapper import VAELossWrapper
+from pyramidflow.video_vae.vae_wrapper import VAELossWrapper
 from dataset.dataset_cls import VideoDataset
 from dataset.dataloaders import video_dataloaders
 

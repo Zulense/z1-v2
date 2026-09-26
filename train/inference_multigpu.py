@@ -4,7 +4,7 @@ import torch, argparse
 from context_parallel import init_distributed_mode
 from sequence_parallel import init_sequence_parallel_group
 
-from video_vae.causal_conv import CausalConv3d
+from pyramidflow.video_vae.causal_conv import CausalConv3d
 
 
 def get_args():
