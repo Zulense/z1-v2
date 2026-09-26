@@ -141,7 +141,7 @@ class CausalConv3d(nn.Module):
 
         if temporal_chunk:
             if is_init_image: # RANK=0
-
+                # Expected input=torch.Size([: 3, :, :, :])
                 # torch.Size([2, 128, 17, 256, 256]) -> torch.Size([2, 128, 19, 256, 256])
                 # Encode the first chunk.
                 x = torch.nn.functional.pad(x, self.time_causal_padding, mode=pad_mode)

@@ -5,7 +5,6 @@ from .vae import WanVAE_
 
 
 def _video_vae(z_dim=None,
-               device='cpu',
                **kwargs):
 
     # params 

@@ -52,7 +52,7 @@ class Encoder3d(nn.Module):
                 mode = 'downsample3d' if temporal_downsample[i] else None
                 downsamples.append(Resample(dim=out_dim,
                                             mode=mode))
-                scale /= 2.0 # <--------- I DON'T UNDERSTAND WHAT DOES NEED OF THIS `scale`
+                scale /= 2.0
 
         self.downsamples = nn.Sequential(*downsamples)
 

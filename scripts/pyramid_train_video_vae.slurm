@@ -22,7 +22,7 @@ LPIPS_CKPT=/nlsasfs/home/hfgenai/mansav/z1-v2/PATH/vgg_lpips.pth
 
 # Run the inference script, making sure sp_group_size matches world_size
 torchrun --nproc-per-node=$GPUS \
-    train/train_video_vae.py \
+    train/pyramid_train_video_vae.py \
     --max_frames=$NUM_FRAMES \
     --batch_size=$BATCH_SIZE \
     --num_workers 6 \

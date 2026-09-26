@@ -1,0 +1,97 @@
+(cuda12.4) mansav@login:~/z1-v2$ cat vae_logs/inference_529107.log
+Traceback (most recent call last):
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/train/train_video_vae.py", line 276, in <module>
+[rank1]:     main(opts)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/train/train_video_vae.py", line 244, in main
+[rank1]:     train_start = train_one_epoch(model,
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/trainer_middleware/vae_ddp_trainer.py", line 58, in train_one_epoch
+[rank1]:     rec_loss, rec_log = model(x=samples['video'],
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/parallel/distributed.py", line 1643, in forward
+[rank1]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/parallel/distributed.py", line 1459, in _run_ddp_forward
+[rank1]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/vae_wrapper.py", line 99, in forward
+[rank1]:     posterior, reconstruct = self.vae(batch_x,
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/vae.py", line 170, in forward
+[rank1]:     h = self.encoder(x, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/enc_dec.py", line 105, in forward
+[rank1]:     sample = self.conv_in(sample,
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/causal_conv.py", line 186, in forward
+[rank1]:     x = self.conv(x)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank1]:     return self._call_impl(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank1]:     return forward_call(*args, **kwargs)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 725, in forward
+[rank1]:     return self._conv_forward(input, self.weight, self.bias)
+[rank1]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 720, in _conv_forward
+[rank1]:     return F.conv3d(
+[rank1]: RuntimeError: Given groups=1, weight of size [128, 3, 3, 3, 3], expected input[2, 128, 18, 258, 258] to have 3 channels, but got 128 channels instead
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/train/train_video_vae.py", line 276, in <module>
+[rank0]:     main(opts)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/train/train_video_vae.py", line 244, in main
+[rank0]:     train_start = train_one_epoch(model,
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/trainer_middleware/vae_ddp_trainer.py", line 58, in train_one_epoch
+[rank0]:     rec_loss, rec_log = model(x=samples['video'],
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/parallel/distributed.py", line 1643, in forward
+[rank0]:     else self._run_ddp_forward(*inputs, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/parallel/distributed.py", line 1459, in _run_ddp_forward
+[rank0]:     return self.module(*inputs, **kwargs)  # type: ignore[index]
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/vae_wrapper.py", line 99, in forward
+[rank0]:     posterior, reconstruct = self.vae(batch_x,
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/vae.py", line 170, in forward
+[rank0]:     h = self.encoder(x, is_init_image=is_init_image, temporal_chunk=temporal_chunk)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/enc_dec.py", line 105, in forward
+[rank0]:     sample = self.conv_in(sample,
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/z1-v2/video_vae/causal_conv.py", line 186, in forward
+[rank0]:     x = self.conv(x)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1739, in _wrapped_call_impl
+[rank0]:     return self._call_impl(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1750, in _call_impl
+[rank0]:     return forward_call(*args, **kwargs)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 725, in forward
+[rank0]:     return self._conv_forward(input, self.weight, self.bias)
+[rank0]:   File "/nlsasfs/home/hfgenai/mansav/miniconda3/envs/cuda12.4/lib/python3.10/site-packages/torch/nn/modules/conv.py", line 720, in _conv_forward
+[rank0]:     return F.conv3d(
+[rank0]: RuntimeError: Given groups=1, weight of size [128, 3, 3, 3, 3], expected input[2, 128, 19, 258, 258] to have 3 channels, but got 128 channels instead
