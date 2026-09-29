@@ -82,6 +82,7 @@ class CausalConv3d(nn.Module):
     def context_parallel_forward(self, x):
 
         cp_rank = get_context_parallel_rank()
+        # torch.Size([2, 3, 17, 256, 256])
         if self.time_kernel_size == 3 and ((cp_rank == 0 and x.shape[2] <= 2) or (cp_rank != 0 and x.shape[2] <= 1)):
 
             ## if the computer are working with tiny video clips (just 1 or 2 frames) and the viewing window (`time_kernel_size`) is exactly 3 frames, 
@@ -96,17 +97,20 @@ class CausalConv3d(nn.Module):
                           dim=2)
 
         else:
+            # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 3, 19, 256, 256])
             ## to automatically grab the exact number of frames it needs from the previous computer.
             x = cp_pass_from_previous_rank(input_=x,
                                            dim=2,
                                            kernel_size=self.time_kernel_size)
 
+        # torch.Size([2, 3, 19, 256, 256]) -> torch.Size([2, 3, 19, 256, 256])
         x = torch.nn.functional.pad(x, self.time_uncausal_padding, mode='constant')
 
         if cp_rank != 0:
             if self.temporal_stride == 2 and self.time_kernel_size == 3:
                 x = x[:, :, 1:]
 
+        # torch.Size([2, 3, 19, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         x = self.conv(x)
         return x 
     
@@ -128,16 +132,16 @@ class CausalConv3d(nn.Module):
 
         cp_rank = get_context_parallel_rank()
 
+        # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
         if is_context_parallel_initialized():
-            x = self.context_parallel_forward(x)
+            return self.context_parallel_forward(x)
 
 
-        if self.time_pad < x.shape[2]:
-            pad_mode = self.pad_mode
-
-        else:
-            pad_mode = 'constant'
-
+        pad_mode = self.time_pad < x.shape[2] if self.pad_mode else 'constant'
+        
+        ## <---------------------------------------------------------------------------->##
+        ## REST OF THE CODE WORK WHEN `is_context_parallel_initialized()` IS NOT WORKING ##
+        ## <---------------------------------------------------------------------------->##
 
         if temporal_chunk:
             if is_init_image: # RANK=0

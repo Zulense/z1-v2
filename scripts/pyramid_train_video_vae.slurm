@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=train_video_vae
-#SBATCH --partition=dgxnp        # The DGX GPU partition we found from sinfo
+#SBATCH --partition=airawatp        # The DGX GPU partition we found from sinfo
 #SBATCH --nodes=1                # We only need 1 DGX node
 #SBATCH --gpus-per-node=2        # Request all 8 A100 GPUs on that node
 #SBATCH --cpus-per-task=4       # Request CPU cores to feed data to the GPUs
