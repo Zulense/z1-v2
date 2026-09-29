@@ -72,7 +72,7 @@ class CausalVideoVae(ModelMixin, ConfigMixin):
 
         super().__init__()
         
-        print(f"The latent dim channels is: {encoder_out_channels}")
+        # print(f"The latent dim channels is: {encoder_out_channels}")
 
         self.encoder = CausalVaeEncoder(in_channels=encoder_in_channels,
                                         out_channels=encoder_out_channels,

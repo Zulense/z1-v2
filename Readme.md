@@ -14,11 +14,12 @@
 
 
 
-## Now we only test Conv3D() as context_parallel operation.
-we have 8 A100 40 GPU to test conv layer.
+## Let's Debugg the code.
+we have 8 A100 40 GPU
 
-as testing inference.
+
 ```
-sbatch inference_multigpu.slurm
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+sbatch scripts/pyramid_inference_multigpu.slurm
 ```
 
