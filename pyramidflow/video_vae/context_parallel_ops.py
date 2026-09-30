@@ -197,8 +197,8 @@ def _conv_gather(input_, dim=2, kernel_size=1):
     output = torch.cat(tensor_list, dim=dim).contiguous()
 
     # Let each GPU write its own little diary entry to a text file
-    with open(f"gpu_log_rank_{cp_rank}.txt", "a") as f:
-        f.write(f"Hello from Rank {cp_rank}! My input was: {input_.shape}, and my output is: {output.shape}\n")
+    # with open(f"gpu_log_rank_{cp_rank}.txt", "a") as f:
+    #     f.write(f"Hello from Rank {cp_rank}! My input was: {input_.shape}, and my output is: {output.shape}\n")
         
     # print('out _conv_gather, cp_rank:', cp_rank, 'input_size:', output.shape) -> cp_rank: 0 input_size: torch.Size([2, 8, 5, 32, 32])
     return output

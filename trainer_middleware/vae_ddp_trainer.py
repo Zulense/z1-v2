@@ -60,6 +60,31 @@ def train_one_epoch(
                                       identifier=samples['identifier'])
             print(f"<---------------> rec_loss={rec_loss}, rec_log={rec_log} <------------------->")
         ###################################################################################
+
+        # The update of rec_loss 
+        if rec_loss is not None:
+            loss_value = rec_loss.item()
+
+            if not math.isfinite(loss_value):
+                print(f"Loss is {loss_value}, stopping training", force=True)
+                sys.exit(1)
+
+            optimizer.zero_grad()
+            is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
+            grad_norm = loss_scaler(rec_loss,
+                                    optimizer,
+                                    clip_grad=clip_grad,
+                                    parameters=model.modules.vae.parameters(),
+                                    create_graph=is_second_order)
+
+            if "scale" in loss_scaler.state_dict():
+                loss_scaler_value = loss_scaler.state_dict()["scale"]
+            else:
+                loss_scaler_value = 1 
+
+            
+            
+
         
 
 

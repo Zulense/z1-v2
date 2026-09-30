@@ -117,10 +117,7 @@ class VAELossWrapper(nn.Module):
             last_layer=self.vae.get_last_layer()
         )
 
-       
-
-       
-
+        
 
 
         return reconstruct_loss, rec_log

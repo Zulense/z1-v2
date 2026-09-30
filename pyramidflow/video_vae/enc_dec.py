@@ -100,8 +100,8 @@ class CausalVaeEncoder(nn.Module):
         cp_rank = get_context_parallel_rank()
 
 
-        with open(f"enc_dec_Encoder_sample_cp_rank_{cp_rank}.txt", "a") as f:
-            f.write(f"<----------------- [enc_dec.py] what is the shape of sample={sample.shape} --------------->\n", flush=True)
+        # with open(f"enc_dec_Encoder_sample_cp_rank_{cp_rank}.txt", "a") as f:
+        #     f.write(f"<----------------- [enc_dec.py] what is the shape of sample={sample.shape} --------------->\n", flush=True)
 
         # conv_in.conv.weight.shape=torch.Size([128, 3, 3, 3, 3]) RANK=0, Rank=1
         # torch.Size([2, 3, 17, 256, 256]) -> torch.Size([2, 128, 17, 256, 256])
