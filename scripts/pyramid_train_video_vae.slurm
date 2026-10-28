@@ -14,7 +14,8 @@
 GPUS=2
 VIDEO_ANNO=/nlsasfs/home/hfgenai/mansav/z1-v2/annotation/class_5_math_white_board.jsonl
 RESOLUTION=256
-NUM_FRAMES=33   # 13 * context_size - 1 
+# (x * 8 + 1) => 17 * context_size - 1 => 33, (x * 4 + 1) => 9 * context_size - 1 => 17
+NUM_FRAMES=17
 BATCH_SIZE=2
 CONTEXT_SIZE=2   # context parallel size, GPUS % CONTEXT_SIZE=0
 LPIPS_CKPT=/nlsasfs/home/hfgenai/mansav/z1-v2/PATH/vgg_lpips.pth

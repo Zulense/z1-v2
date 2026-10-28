@@ -55,10 +55,10 @@ def train_one_epoch(
                                 dtype=_dtype,
                                 enabled=True):
             
-            rec_loss, rec_log = model(x=samples['video'],
+            rec_loss, gan_loss, log_loss = model(x=samples['video'],
                                       step=args.global_step,
                                       identifier=samples['identifier'])
-            print(f"<---------------> rec_loss={rec_loss}, rec_log={rec_log} <------------------->")
+            print(f"<---------------> rec_loss={rec_loss}, gan_loss={gan_loss}, rec_log={log_loss} <------------------->")
         ###################################################################################
 
         # The update of rec_loss 

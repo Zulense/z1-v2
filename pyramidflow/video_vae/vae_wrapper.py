@@ -117,10 +117,20 @@ class VAELossWrapper(nn.Module):
             last_layer=self.vae.get_last_layer()
         )
 
+        # The loss to train the discriminator.
+        gan_loss, gan_log = self.loss(batch_x,
+                                      reconstruct,
+                                      posterior,
+                                      optimizer_idx=1,
+                                      global_step=step,
+                                      last_layer=self.vae.get_last_layer())
+
+        loss_log = {**rec_log, **gan_log}
+
         
 
 
-        return reconstruct_loss, rec_log
+        return reconstruct_loss, gan_loss, loss_log
     
 
         
