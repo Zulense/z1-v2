@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 import numpy as np
 import torch.backends.cudnn as cudnn
-import sys 
+import sys, os, json
 import time 
 
 
@@ -157,6 +157,7 @@ def main(args):
     global_rank = get_rank()
 
     num_training_steps_per_epoch = args.iters_per_epoch
+    log_writer = None
 
     # build dataset and dataloaders 
     # only video 
@@ -238,6 +239,7 @@ def main(args):
     ) if args.add_discriminator else None
 
     print(f"start training for {args.epochs} epochs, total global iterations is {args.global_step}")
+    start_time = time.time()
     torch.distributed.barrier()
 
     for epoch in range(args.start_epoch, args.epochs):
@@ -251,6 +253,7 @@ def main(args):
                                       loss_scaler=loss_scaler,
                                       loss_scaler_disc=loss_scaler_disc,
                                       clip_grad=args.clip_grad,
+                                      log_writer=log_writer,
                                       start_steps=epoch * num_training_steps_per_epoch,
                                       lr_schedule_values=lr_schedule_values,
                                       lr_schedule_values_disc=lr_schedule_values_disc,
@@ -259,18 +262,48 @@ def main(args):
                                       iters_per_epoch=num_training_steps_per_epoch)
 
 
+        from trainer_middleware.utils import save_model
+        if args.output_dir:
+            if (epoch + 1) % args.save_ckpt_freq == 0 \
+                or epoch + 1 == args.epochs:
+                save_model(
+                    args=args,
+                    model=model,
+                    optimizer=optimizer,
+                    loss_scaler=loss_scaler,
+                    epoch=epoch,
+                    save_ckpt_freq=args.save_ckpt_freq,
+                    optimizer_disc=optimizer_disc
+                )
+
+
+
+
+        log_stats = {
+            **{f'train_{k}':v for k, v in train_start.items()},
+            'epoch': epoch,
+            
+        }
+
+        from context_parallel import is_main_process
+        import datetime
+        if args.output_dir and is_main_process():
+            if log_writer is not None:
+                log_writer.flush()
+
+            with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+                f.write(json.dumps(log_stats) + "\n")
+
+        total_time = time.time() - start_time
+        total_time_str = str(datetime.timedelta(seconds=int(total_time)))
+        print(f"Training time: {total_time_str}")
 
     
 
-        
-    
-
-
-
-    
-        
 
 
 if __name__ == '__main__':
     opts = get_args()
+    if opts.output_dir:
+        Path(opts.output_dir).mkdir(parents=True, exist_ok=True)
     main(opts)

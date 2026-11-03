@@ -78,7 +78,7 @@ class VAELossWrapper(nn.Module):
         cp_rank = get_context_parallel_rank()
 
         if 'video' in identifier:
-            print("video are found.")
+            # print("video are found.")
 
         if is_context_parallel_initialized():
 

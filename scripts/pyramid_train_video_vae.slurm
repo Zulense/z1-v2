@@ -19,7 +19,7 @@ NUM_FRAMES=17
 BATCH_SIZE=2
 CONTEXT_SIZE=2   # context parallel size, GPUS % CONTEXT_SIZE=0
 LPIPS_CKPT=/nlsasfs/home/hfgenai/mansav/z1-v2/PATH/vgg_lpips.pth
-
+OUTPUT_DIR=/PATH/output_dir
 
 # Run the inference script, making sure sp_group_size matches world_size
 torchrun --nproc-per-node=$GPUS \
@@ -52,6 +52,8 @@ torchrun --nproc-per-node=$GPUS \
     --epochs 100 \
     --iters_per_epoch 20000 \
     --print_freq 40 \
+    --add_discriminator \
+    --output_dir $OUTPUT_DIR
     
 
     

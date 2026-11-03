@@ -149,6 +149,8 @@ def initialize_context_parallel(context_parallel_size):
             break
 
 
+def is_main_process():
+    return get_rank() == 0
 
 
 

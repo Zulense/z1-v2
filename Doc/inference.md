@@ -67,3 +67,7 @@ like this `inference_516348`
 ```
 sbatch inference_multigpu.slurm
 ```
+- use the `partition`
+```
+sbatch --partition=airawatp scripts/pyramid_train_video_vae.slurm
+```
