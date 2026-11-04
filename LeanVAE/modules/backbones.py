@@ -3,7 +3,7 @@ from torch import nn
 from einops import rearrange
 import torch.nn.functional as F
 from einops.layers.torch import Rearrange
-
+import numpy as np
 
 
 class PEG3D(nn.Module):
@@ -202,7 +202,171 @@ class Encoder_Arch(nn.Module):
         return x
 
 
+class Decoder_Arch(nn.Module):
+    def __init__(self,
+                 l_dim=128,
+                 h_dim=384,
+                 sep_num_layer=2,
+                 fusion_num_layer=4,
+                 patch_size=(2, 4, 4),
+                 in_channel=3):
+        super().__init__()
+        self.l_dim = l_dim
+        self.is_first_chunk = True
+        self.tile_inference = False 
+
+        self._build_linear_unpatch(in_channel=in_channel,
+                                   out_channel_low=l_dim,
+                                   out_channel_high=h_dim,
+                                   pt=patch_size[0],
+                                   ph=patch_size[1],
+                                   pw=patch_size[2])
+
+        self.low_layer = ResNAF(num_layer=sep_num_layer, dim=l_dim)
+        self.high_layer = ResNAF(num_layer=sep_num_layer, dim=h_dim)
+        self.fusion_layer = ResNAF(num_layer=fusion_num_layer, dim=l_dim+h_dim)
+
+
+    def _build_linear_unpatch(self,
+                              in_channel=3,
+                              out_channel_low=128,
+                              out_channel_high=384,
+                              pt=2,
+                              ph=4,
+                              pw=4):
+
+        patch_config = {
+            'video_low': (pt, ph, pw),
+            'video_high': (pt, ph, pw),
+            'image_low': (1, ph, pw),
+            'image_high': (1, ph, pw)
+        }
+
+        for name, (t, h, w) in patch_config.items():
+            if 'low' in name:
+                out_dim = in_channel * t * h * w
+                in_dim = out_channel_low
+            else:
+                in_dim = out_channel_high
+                out_dim = in_channel * t * h * w * 7 if 'video' in name else in_channel * t * h * w * 3
+
+            proj = nn.Sequential(
+                nn.Linear(in_dim, out_dim),
+                Rearrange('b nt nh nw (c pt ph pw) -> b c (nt pt) (nh ph) (nw pw)', pt=t, ph=h, pw=w)
+            )
+            self.add_module(f"{name}_proj", proj)
+
+    def _linear_unpatch(self, x, proj_type):
+        low_comp, high_comp = getattr(self, f"{proj_type}_low_proj")(x[0]), getattr(self, f"{proj_type}_high_proj")(x[1])
+        return torch.cat([low_comp, high_comp], dim=1)
+
+    def _feature_transform(self, x):
+        x = self.fusion_layer(x)
+        low_x = self.low_layer(x[:, :, :, :, :self.l_dim])
+        high_x = self.high_layer(x[:, :, :, :, self.l_dim:])
+
+        return low_x, high_x
+
+    def decode(self, x, is_image=False):
+        low_x, high_x = self._feature_transform(x)
+
+        if is_image:
+            xi = self._linear_unpatch(x=(low_x, high_x), proj_type='image')
+            return (xi, None)
+        else:
+            if self.tile_inference and not self.is_first_chunk:
+                xv = self._linear_unpatch(x=(low_x, high_x), proj_type='video')
+                return (None, xv)
+            else:
+                xi = self._linear_unpatch(x=(low_x[:, :1], high_x[:, :1]), proj_type='image')
+                xv = self._linear_unpatch(x=(low_x[:, 1:], high_x[:, 1:]), proj_type='video')
+                return (xi, xv)
+
+    def forward(self, x):
+        low_x, high_x = self._feature_transform(x)
+        xi = self._linear_unpatch(x=(low_x[:, :1], high_x[:, :1]), proj_type='image')
+        xv = self._linear_unpatch(x=(low_x[:, 1:], high_x[:, 1:]), proj_type='video')
+        return (xi, xv)
+
     
+
+class ISTA(nn.Module):
+    """
+    Iterative Shrinkage-Thresholding Algorithm.
+    """
+    def __init__(self,
+                 points_num=512,
+                 out_num=4,
+                 iter_num=2,
+                 layer_num=2):
+        super().__init__()
+        phi_init = np.random.normal(loc=0.0, 
+                                    scale=(1 / points_num) ** 0.5,
+                                    size=(out_num, points_num))
+        self.phi = nn.Parameter(torch.from_numpy(phi_init).float(), requires_grad=True)
+        self.Q = nn.Parameter(torch.from_numpy(np.transpose(phi_init)).float(), requires_grad=True)
+        self.iter_num = iter_num
+        self.forward_l = nn.ModuleList()
+        self.backward_l = nn.ModuleList()
+
+        for _ in range(self.iter_num):
+            self.forward_l.append(NAF(num_layer=layer_num, dim=points_num))
+            self.backward_l.append(NAF(num_layer=layer_num, dim=points_num))
+
+        self.weights = nn.ParameterList()  # Learnable step to control how strongly we correct our guess at each step
+        self.threshold = nn.ParameterList() # Learnable shrinkage thresholds (initialized to 0.01) to erase small noisy values close to zero.
+
+        for _ in range(self.iter_num):
+            self.threshold.append(nn.Parameter(torch.Tensor([0.01]), requires_grad=True))
+            self.weights.append(nn.Parameter(torch.tensor(1.), requires_grad=True))
+
+    def sample(self, x):
+        # ([2, 5, 32, 32, 512])
+        b, t, h, w, d = x.shape 
+        # ([10240, 512]) @ ([512, 4]) -> ([10240, 4])
+        y = x.view(-1, d) @ self.phi.T
+        # ([2, 5, 32, 32, 4])
+        return y.view(b, t, h, w, -1)
+
+    def recon(self, y):
+        # ([2, 5, 32, 32, 4])
+        b, t, h, w, c = y.shape 
+        # ([10240, 4])
+        y = y.reshape(-1, c)
+        # ([10240, 4]) @ ([4, 512]) -> ([10240, 512])
+        recon = torch.mm(y, self.Q.t())
+        _, d = recon.shape
+
+        for i in range(self.iter_num):
+            # ([10240, 512]) - 1.0 * {{([10240, 512])@ ([512, 4]) -> ([10240, 4]) - ([10240, 4])} @ ([4, 512]) -> ([10240, 512])}
+            recon_r = recon - self.weights[i] * torch.mm((torch.mm(recon, self.phi.t()) - y), self.phi)
+            # ([10240, 512]) -> ([2, 5, 32, 32, 512])
+            recon = recon_r.reshape(b, t, h, w, -1)
+            recon = self.forward_l[i](recon)
+            r"""
+                Notice what happened: the two weak noisy numbers (-0.004 and 0.008) were erased to 0.0, 
+                while the two strong signals (-0.05 and 0.03) survived (shrunk slightly by 0.01 to -0.04 and 0.02). 
+                In Compressed Sensing, this enforces sparsity (Equation 1, ||Ψp||₁), ensuring only strong, meaningful video features are passed to the backward NAF network.   
+            """
+            # {[0.05, 0.004, 0.008, 0.03] -> [-1, -1, +1, +1],  {[-0.05, -0.004, 0.008, 0.03] -> [0.05, 0.004, 0.008, 0.03] - 0.01 -> [0.04, -0.006, -0.002, 0.02]} -> [0.04, 0.0, 0.0, 0.02]} -> [-0.04, 0.0, 0.0, 0.02]
+            recon = torch.mul(torch.sign(recon), F.relu(torch.abs(recon) - self.threshold[i]))
+            # ([2, 5, 32, 32, 512])~[-0.04, 0.0, 0.0, 0.02, ...] -> ([10240, 512])
+            recon = self.backward_l[i](recon).view(-1, d)
+            # ([10240, 512]) + ([10240, 512])
+            recon = recon_r + recon
+        # ([2, 5, 32, 32, 512])
+        return recon.view(b, t, h, w, -1)
+
+
+    def forward(self, x):
+        # ([2, 5, 32, 32, 512]) -> ([2, 5, 32, 32, 4])
+        y = self.sample(x)
+        # ([2, 5, 32, 32, 4]) -> ([2, 5, 32, 32, 512])
+        recon = self.recon(y)
+        return recon
+    
+
+
     
 
 
