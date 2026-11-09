@@ -10,13 +10,13 @@ import time
 # Add the parent directory (z1-v2)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from context_parallel import init_distributed_mode, initialize_context_parallel, get_rank, get_world_size
+from pyramidflow.context_parallel import init_distributed_mode, initialize_context_parallel, get_rank, get_world_size
 from pyramidflow.video_vae.vae_wrapper import VAELossWrapper
-from dataset.dataset_cls import VideoDataset
-from dataset.dataloaders import video_dataloaders
+from pyramidflow.dataset.dataset_cls import VideoDataset
+from pyramidflow.dataset.dataloaders import video_dataloaders
 
-from trainer_middleware.utils import create_optimizer, NativeScalerWithGradNormCount, cosine_scheduler
-from trainer_middleware.vae_ddp_trainer import train_one_epoch
+from pyramidflow.trainer_middleware.utils import create_optimizer, NativeScalerWithGradNormCount, cosine_scheduler
+from pyramidflow.trainer_middleware.vae_ddp_trainer import train_one_epoch
 
 
 
@@ -262,7 +262,7 @@ def main(args):
                                       iters_per_epoch=num_training_steps_per_epoch)
 
 
-        from trainer_middleware.utils import save_model
+        from pyramidflow.trainer_middleware.utils import save_model
         if args.output_dir:
             if (epoch + 1) % args.save_ckpt_freq == 0 \
                 or epoch + 1 == args.epochs:
@@ -285,7 +285,7 @@ def main(args):
             
         }
 
-        from context_parallel import is_main_process
+        from pyramidflow.context_parallel import is_main_process
         import datetime
         if args.output_dir and is_main_process():
             if log_writer is not None:

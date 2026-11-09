@@ -15,7 +15,7 @@ from .block import DownEncoderBlockCausal3D, MidBlockCausal3D, UpDecoderBlockCau
 import sys 
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from context_parallel import get_context_parallel_rank
+from pyramidflow.context_parallel import get_context_parallel_rank
 
 class CausalVaeEncoder(nn.Module):
 
@@ -353,7 +353,14 @@ class DiagonalGaussianDistribution(object):
                     dim=[2, 3, 4],
                 )
 
-
+    def nll(self, sample: torch.Tensor, dims: Tuple[int, ...] = [1, 2, 3]) -> torch.Tensor:
+        if self.deterministic:
+            return torch.Tensor([0.0])
+        logtwopi = np.log(2.0 * np.pi)
+        return 0.5 * torch.sum(
+            logtwopi + self.logvar + torch.pow(sample - self.mean, 2) / self.var,
+            dim=dims,
+        )
 
 
     def mode(self) -> torch.Tensor:

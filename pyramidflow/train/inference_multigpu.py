@@ -1,8 +1,8 @@
 ## <---- This is testing [inference] file. -----------------> ##
 
 import torch, argparse
-from context_parallel import init_distributed_mode
-from sequence_parallel import init_sequence_parallel_group
+from pyramidflow.context_parallel import init_distributed_mode
+from pyramidflow.sequence_parallel import init_sequence_parallel_group
 
 from pyramidflow.video_vae.causal_conv import CausalConv3d
 

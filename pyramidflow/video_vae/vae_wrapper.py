@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 # Add the parent directory (z1-v2)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from context_parallel import (
+from pyramidflow.context_parallel import (
         is_context_parallel_initialized, 
         get_context_parallel_world_size, 
         get_context_parallel_group_rank, 
@@ -19,7 +19,7 @@ from .loss import LPIPSWithDiscriminator
 import sys 
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from context_parallel import get_context_parallel_rank
+from pyramidflow.context_parallel import get_context_parallel_rank
 
 
 class VAELossWrapper(nn.Module):

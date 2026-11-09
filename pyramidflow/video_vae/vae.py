@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 # Add the parent directory (z1-v2)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from context_parallel import is_context_parallel_initialized, get_context_parallel_rank
+from pyramidflow.context_parallel import is_context_parallel_initialized, get_context_parallel_rank
 
 
 

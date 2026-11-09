@@ -11,7 +11,7 @@ logger = logging.get_logger(__name__)
 import sys 
 from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from context_parallel import get_context_parallel_rank
+from pyramidflow.context_parallel import get_context_parallel_rank
 
 
 

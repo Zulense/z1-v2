@@ -14,7 +14,7 @@ import datetime
 
 # Add the parent directory (z1-v2)
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from utils import is_dist_avail_and_initialized
+from pyramidflow.utils import is_dist_avail_and_initialized
 
 def get_parameter_groups(model, weight_decay=1e-5, base_lr=1e-4, skip_list=(), get_num_layer=None, get_layer_scale=None, **kwargs):
     parameter_group_names = {}
@@ -359,7 +359,7 @@ class MetricLogger(object):
             header, total_time_str, total_time / len(iterable)))
 
 
-from context_parallel import is_main_process
+from pyramidflow.context_parallel import is_main_process
 def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
