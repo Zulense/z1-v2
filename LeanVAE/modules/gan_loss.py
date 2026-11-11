@@ -1,10 +1,13 @@
-import torch
+import torch, sys
 from torch import nn
 import torch.nn.functional as F
 from typing import Any
 from einops import rearrange
+from pathlib import Path
 
-from LeanVAE.modules.discriminator import NLayerDiscriminator
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from modules.discriminator import NLayerDiscriminator
 
 
 def weights_init(m):

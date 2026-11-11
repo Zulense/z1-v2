@@ -1,13 +1,16 @@
-import torch
+import torch, os, sys
 import pytorch_lightning as pl
 from torch import nn
 from timm.models.layers import trunc_normal_
 import torch.nn.functional as F
 from timm.scheduler.cosine_lr import CosineLRScheduler
+from pathlib import Path
 
-from autoencoder import LeanVAE
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from .autoencoder import LeanVAE
 from modules.lpips import LPIPS
-from LeanVAE.modules.gan_loss import AdverserialLoss
+from modules.gan_loss import AdverserialLoss
 
 class AutoEncoderEngine(pl.LightningModule):
 

@@ -1,4 +1,4 @@
-import torch, os, json
+import torch, os, json, sys
 import pytorch_lightning as pl
 import torch.utils.data as data
 from decord import VideoReader
@@ -7,7 +7,10 @@ import numpy as np
 import torch.distributed as dist
 from torch.utils.data import Sampler
 from typing import Optional, List
+from pathlib import Path
 
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from data_utils import VideoNorm
 from dataset_func_utils import get_length_grouped_indices
 

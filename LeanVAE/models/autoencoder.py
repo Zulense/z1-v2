@@ -1,10 +1,13 @@
-import torch
+import torch, sys
 from torch import nn
 from einops import rearrange
+from pathlib import Path
 
-from backbones import ISTA, Encoder_Arch, Decoder_Arch
-from patches import Patcher, UnPatcher
-from LeanVAE.modules.gaussian import DiagonalGaussianDistribution
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+from .backbones import ISTA, Encoder_Arch, Decoder_Arch
+from .patches import Patcher, UnPatcher
+from modules.gaussian import DiagonalGaussianDistribution
 
 
 class LeanVAE(nn.Module):

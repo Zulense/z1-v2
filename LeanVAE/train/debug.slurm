@@ -1,11 +1,11 @@
 #!/bin/bash
 #SBATCH --job-name=multi_gpu_inference
-#SBATCH --partition=dgxnp        # The DGX GPU partition we found from sinfo
+#SBATCH --partition=airawatp        # The DGX GPU partition we found from sinfo
 #SBATCH --nodes=1                # We only need 1 DGX node
 #SBATCH --gpus-per-node=2        # Request all 8 A100 GPUs on that node
 #SBATCH --cpus-per-task=4       # Request CPU cores to feed data to the GPUs
 #SBATCH --time=01:00:00          # 2 hours max (well under the 7-day limit)
-#SBATCH --output=logs/inference_%j.log # Save the output to a log file
+#SBATCH --output=vae_logs/inference_%j.log # Save the output to a log file
 
 
 
@@ -14,7 +14,8 @@ GPUS=2
 
 # Run the inference script
 torchrun --nproc-per-node=$GPUS \
-    train.py \
+    LeanVAE/train/train.py \
+    --embedding_dim \
     --default_root_dir "../LeanVAE_ex/run1" \
     --num_nodes 1 \
     --gpus 8 \

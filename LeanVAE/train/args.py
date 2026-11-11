@@ -2,8 +2,8 @@ import argparse
 
 
 
-def add_model_specific_args(parent_parser):
-    parser = argparse.ArgumentParser(parents=[parent_parser], add_help=False)
+def add_model_specific_args():
+    parser = argparse.ArgumentParser(description="Vae Training param", add_help=True)
 
     # Model arch param
     parser.add_argument("--embedding_dim", type=int, default=512, help="Dim of the embedding space.")

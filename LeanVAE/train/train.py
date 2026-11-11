@@ -1,8 +1,11 @@
-import torch, os
+import torch, os, sys
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
 from pytorch_lightning.loggers import WandbLogger
+from pathlib import Path
 
+# Add the parent directory (z1-v2)
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from dataset.dataset import VideoData
 from models.play import AutoEncoderEngine
 from callback import VideoLogger
