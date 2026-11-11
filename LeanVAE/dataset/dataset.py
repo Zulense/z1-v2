@@ -1,4 +1,4 @@
-import torch, os
+import torch, os, json
 import pytorch_lightning as pl
 import torch.utils.data as data
 from decord import VideoReader
@@ -116,12 +116,41 @@ class MultiSizeVideoDataset(data.Dataset):
 
         self.lengths = []
         self.annotations = []
-        for dir in os.listdir(data_list):
-            file_path = os.path.join(data_list, dir)
-            with open(file_path) as f:
-                anno = [anno.strip() for anno in f.readlines()]
-                self.annotations.extend(anno)
-                self.lengths.extend([dir] * len(anno))
+        # for dir in os.listdir(data_list):
+        #     file_path = os.path.join(data_list, dir)
+        #     with open(file_path) as f:
+        #         anno = [anno.strip() for anno in f.readlines()]
+        #         self.annotations.extend(anno)
+        #         self.lengths.extend([dir] * len(anno))
+
+        ## case 1: data_list is a .jsonl file ##
+        if os.path.isfile(data_list) and data_list.endwith('.jsonl'):
+            with open(data_list, "r", encoding="utf-8") as f:
+                for line in f:
+                    if not line.strip():
+                        continue
+                    item = json.loads(line)
+                    raw_video_path = item["video"]
+
+                    if self.data_folder is not None:
+                        candidate_1 = os.path.join(self.data_folder, os.path.basename(raw_video_path))
+                        candidate_2 = os.path.join(self.data_folder, raw_video_path.lstrip("/"))
+
+                        if os.path.exists(candidate_1):
+                            video_path = candidate_1
+                        elif os.path.exists(candidate_2):
+                            video_path = candidate_2
+                        else:
+                            assert FileNotFoundError
+                    else:
+                        video_path = raw_video_path
+
+                    item["video"] = video_path
+                    self.annotations.append(item)
+
+                    self.lengths.append(str(item.get("frame", sequence_length)))
+
+
 
         self.norm = VideoNorm()
 
@@ -130,7 +159,18 @@ class MultiSizeVideoDataset(data.Dataset):
 
     def __getitem__(self, idx):
 
-        video_path = self.annotations[idx] if self.data_folder is None else os.path.join(self.data_folder, self.annotations[idx])
+        # video_path = self.annotations[idx] if self.data_folder is None else os.path.join(self.data_folder, self.annotations[idx])
+
+        ann = self.annotations[idx]
+        if isinstance(ann, dict):
+            video_path = ann["video"]
+            caption = ann.get("caption", "")
+        else:
+            video_path = ann if self.data_folder is None else os.path.join(self.data_folder, ann.lstrip("/"))
+            caption = ""
+
+
+
         try:
             decord_vr = VideoReader(video_path)
             total_frames = len(decord_vr)
@@ -235,4 +275,3 @@ class VideoData(pl.LightningDataModule):
         return self._dataloader(False)[0]
 
 
-        
